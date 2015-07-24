@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/fixnum
+(require typed/safe/ops
+         racket/fixnum
          math/base
          math/private/unsafe)
 
@@ -21,6 +22,21 @@
   (cond [(real? x)  (sqr x)]
         [else  (abs (real-part (* x (conjugate x))))]))
 
+(: vector-swap! (All (A)
+                     (~> ([vec : (Vectorof A)]
+                          [i0 : (Refine [i0 : Integer]
+                                        (< -1 i0 (len vec)))]
+                          [i1 : (Refine [i1 : Integer]
+                                        (< -1 i1 (len vec)))])
+                         Void)))
+(define (vector-swap! vs i0 i1)
+  (unless (= i0 i1)
+    (define tmp (unsafe-vector-ref vs i0))
+    (safe-vector-set! vs i0 (safe-vector-ref vs i1))
+    (safe-vector-set! vs i1 tmp)))
+
+; Added refinements to vector-swap!
+#;#;
 (: vector-swap! (All (A) ((Vectorof A) Integer Integer -> Void)))
 (define (vector-swap! vs i0 i1)
   (unless (= i0 i1)
