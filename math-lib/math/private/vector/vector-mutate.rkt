@@ -1,3 +1,4 @@
+
 #lang typed/racket/base
 
 (require typed/safe/ops
@@ -22,6 +23,7 @@
   (cond [(real? x)  (sqr x)]
         [else  (abs (real-part (* x (conjugate x))))]))
 
+; Refinement added
 (: vector-swap! (All (A)
                      (~> ([vec : (Vectorof A)]
                           [i0 : (Refine [i0 : Integer]
@@ -31,18 +33,9 @@
                          Void)))
 (define (vector-swap! vs i0 i1)
   (unless (= i0 i1)
-    (define tmp (unsafe-vector-ref vs i0))
+    (define tmp (safe-vector-ref vs i0))
     (safe-vector-set! vs i0 (safe-vector-ref vs i1))
     (safe-vector-set! vs i1 tmp)))
-
-; Added refinements to vector-swap!
-#;#;
-(: vector-swap! (All (A) ((Vectorof A) Integer Integer -> Void)))
-(define (vector-swap! vs i0 i1)
-  (unless (= i0 i1)
-    (define tmp (unsafe-vector-ref vs i0))
-    (unsafe-vector-set! vs i0 (unsafe-vector-ref vs i1))
-    (unsafe-vector-set! vs i1 tmp)))
 
 (define-syntax-rule (vector-generic-scale! vs-expr v-expr *)
   (let* ([vs  vs-expr]
@@ -50,7 +43,7 @@
          [n   (vector-length vs)])
     (let loop ([#{i : Nonnegative-Fixnum} 0])
       (if (i . fx< . n)
-          (begin (unsafe-vector-set! vs i (* v (unsafe-vector-ref vs i)))
+          (begin (safe-vector-set! vs i (* v (safe-vector-ref vs i)))
                  (loop (fx+ i 1)))
           (void)))))
 
@@ -69,7 +62,7 @@
     (let loop ([#{i : Nonnegative-Fixnum} (fxmin start-expr n)])
       (if (i . fx< . n)
           (begin (unsafe-vector-set! vs0 i (+ (unsafe-vector-ref vs0 i)
-                                              (* (unsafe-vector-ref vs1 i) v)))
+                                            (* (unsafe-vector-ref vs1 i) v)))
                  (loop (fx+ i 1)))
           (void)))))
 
@@ -93,21 +86,30 @@
   (define n (vector-length vs))
   (cond [(fx= n 0)  (raise-argument-error 'vector-mag^2 "nonempty Vector" vs)]
         [else
-         (define s (mag^2 (unsafe-vector-ref vs 0)))
+         (define s (mag^2 (safe-vector-ref vs 0)))
          (let: loop ([i : Nonnegative-Fixnum  1] [s s])
-           (cond [(i . fx< . n)  (loop (fx+ i 1) (+ s (mag^2 (unsafe-vector-ref vs i))))]
+           (cond [(i . fx< . n)  (loop (fx+ i 1) (+ s (mag^2 (safe-vector-ref vs i))))]
                  [else  (abs s)]))]))
 
-(: vector-dot (case-> ((Vectorof Flonum) (Vectorof Flonum) -> Flonum)
-                      ((Vectorof Real) (Vectorof Real) -> Real)
-                      ((Vectorof Float-Complex) (Vectorof Float-Complex) -> Float-Complex)
-                      ((Vectorof Number) (Vectorof Number) -> Number)))
+; Refinement added
+(: vector-dot (case-> (~> ([vec1 : (Refine [vec1 : (Vectorof Flonum)] (< 0 (len vec1)))]
+                           [vec2 : (Refine [vec2 : (Vectorof Flonum)] (< 0 (len vec2)))])
+                          Flonum)
+                      (~> ([vec1 : (Refine [vec1 : (Vectorof Real)] (< 0 (len vec1)))]
+                           [vec2 : (Refine [vec2 : (Vectorof Real)] (< 0 (len vec2)))])
+                          Real)
+                      (~> ([vec1 : (Refine [vec1 : (Vectorof Float-Complex)] (< 0 (len vec1)))]
+                           [vec2 : (Refine [vec2 : (Vectorof Float-Complex)] (< 0 (len vec2)))])
+                          Float-Complex)
+                      (~> ([vec1 : (Refine [vec1 : (Vectorof Number)] (< 0 (len vec1)))]
+                           [vec2 : (Refine [vec2 : (Vectorof Number)] (< 0 (len vec2)))])
+                          Number)))
 (define (vector-dot vs0 vs1)
   (define n (min (vector-length vs0) (vector-length vs1)))
   (cond [(fx= n 0)  (raise-argument-error 'vector-dot "nonempty Vector" 0 vs0 vs1)]
         [else
-         (define v0 (unsafe-vector-ref vs0 0))
-         (define v1 (unsafe-vector-ref vs1 0))
+         (define v0 (safe-vector-ref vs0 0))
+         (define v1 (safe-vector-ref vs1 0))
          (let loop ([#{i : Nonnegative-Fixnum} 1] [s (* v0 (conjugate v1))])
            (cond [(i . fx< . n)
                   (define v0 (unsafe-vector-ref vs0 i))
@@ -125,7 +127,7 @@
   (unless (and (zero? s) (exact? s))
     (let loop ([#{i : Nonnegative-Fixnum} 0])
       (when (i . fx< . n)
-        (unsafe-vector-set! vs i (/ (unsafe-vector-ref vs i) s))
+        (safe-vector-set! vs i (/ (safe-vector-ref vs i) s))
         (loop (fx+ i 1)))))
   s)
 
@@ -139,16 +141,29 @@
         [(float-complex? x)  1.0]
         [else  1]))
 
+; Refinement added
 (: vector-sub-proj!
-   (case-> ((Vectorof Flonum) (Vectorof Flonum) Any -> Nonnegative-Flonum)
-           ((Vectorof Real) (Vectorof Real) Any -> Nonnegative-Real)
-           ((Vectorof Float-Complex) (Vectorof Float-Complex) Any -> Nonnegative-Flonum)
-           ((Vectorof Number) (Vectorof Number) Any -> Nonnegative-Real)))
+   (case-> (~> ([vec1 : (Refine [vec1 : (Vectorof Flonum)] (< 0 (len vec1)))]
+                [vec2 : (Refine [vec2 : (Vectorof Flonum)] (< 0 (len vec2)))]
+                [a : Any])
+               Nonnegative-Flonum)
+           (~> ([vec1 : (Refine [vec1 : (Vectorof Real)] (< 0 (len vec1)))]
+                [vec2 : (Refine [vec2 : (Vectorof Real)] (< 0 (len vec2)))]
+                [a : Any])
+               Nonnegative-Real)
+           (~> ([vec1 : (Refine [vec1 : (Vectorof Float-Complex)] (< 0 (len vec1)))]
+                [vec2 : (Refine [vec2 : (Vectorof Float-Complex)] (< 0 (len vec2)))]
+                [a : Any])
+               Nonnegative-Flonum)
+           (~> ([vec1 : (Refine [vec1 : (Vectorof Number)] (< 0 (len vec1)))]
+                [vec2 : (Refine [vec2 : (Vectorof Number)] (< 0 (len vec2)))]
+                [a : Any])
+               Nonnegative-Real)))
 (define (vector-sub-proj! vs0 vs1 unit?)
   (define n (min (vector-length vs0) (vector-length vs1)))
   (cond [(fx= n 0)  (raise-argument-error 'vector-sub-proj! "nonempty Vector" 0 vs0 vs1)]
         [else
-         (define t (if unit? (one (unsafe-vector-ref vs0 0)) (vector-mag^2 vs1)))
+         (define t (if unit? (one (safe-vector-ref vs0 0)) (vector-mag^2 vs1)))
          (unless (and (zero? t) (exact? t))
            (define s (/ (vector-dot vs0 vs1) t))
            (let loop ([#{i : Nonnegative-Fixnum} 0])
