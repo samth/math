@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/fixnum
+(require typed/safe/ops
+         racket/fixnum
          racket/list
          racket/performance-hint
          (for-syntax racket/base)
@@ -20,9 +21,9 @@
   (define (vector->supertype-vector js)
     (define dims (vector-length js))
     (cond [(= dims 0)  (vector)]
-          [else  (define: new-js : (Vectorof (U A B)) (make-vector dims (unsafe-vector-ref js 0)))
+          [else  (define: new-js : (Vectorof (U A B)) (make-vector dims (safe-vector-ref js 0)))
                  (let loop ([#{i : Nonnegative-Fixnum} 1])
-                   (cond [(i . < . dims)  (unsafe-vector-set! new-js i (unsafe-vector-ref js i))
+                   (cond [(i . < . dims)  (unsafe-vector-set! new-js i (safe-vector-ref js i))
                                           (loop (+ i 1))]
                          [else  new-js]))]))
   
@@ -33,7 +34,7 @@
   (define (array-shape-size ds)
     (define dims (vector-length ds))
     (let loop ([#{i : Nonnegative-Fixnum} 0] [#{n : Natural} 1])
-      (cond [(i . < . dims)  (define d (unsafe-vector-ref ds i))
+      (cond [(i . < . dims)  (define d (safe-vector-ref ds i))
                              (loop (+ i 1) (* n d))]
             [else  n])))
   
@@ -49,7 +50,7 @@
     (define: new-ds : Indexes (make-vector dims 0))
     (let loop ([#{i : Nonnegative-Fixnum} 0])
       (cond [(i . < . dims)
-             (define di (unsafe-vector-ref ds i))
+             (define di (safe-vector-ref ds i))
              (cond [(index? di)  (unsafe-vector-set! new-ds i di)
                                  (loop (+ i 1))]
                    [else  (fail)])]
@@ -58,10 +59,11 @@
   (: unsafe-array-index->value-index (Indexes Indexes -> Nonnegative-Fixnum))
   (define (unsafe-array-index->value-index ds js)
     (define dims (vector-length ds))
+    (unless (= dims (vector-length js)) (error 'foo))
     (let loop ([#{i : Nonnegative-Fixnum} 0] [#{j : Nonnegative-Fixnum} 0])
       (cond [(i . < . dims)
-             (define di (unsafe-vector-ref ds i))
-             (define ji (unsafe-vector-ref js i))
+             (define di (safe-vector-ref ds i))
+             (define ji (safe-vector-ref js i))
              (loop (+ i 1) (unsafe-fx+ ji (unsafe-fx* di j)))]
             [else  j])))
   
@@ -71,9 +73,8 @@
       (define dims (vector-length ds))
       (let: loop : Index ([i : Nonnegative-Fixnum  dims] [s : Nonnegative-Fixnum  1])
         (cond [(zero? i)  j]
-              [else  (let* ([i  (- i 1)]
-                            [j  (loop i (unsafe-fx* s (unsafe-vector-ref ds i)))])
-                       (unsafe-vector-set! js i (fxquotient j s))
+              [else  (let ([j  (loop i (unsafe-fx* s (unsafe-vector-ref ds (- i 1))))])
+                       (unsafe-vector-set! js (- i 1) (fxquotient j s))
                        (unsafe-fxmodulo j s))]))
       (void)))
   
@@ -95,8 +96,8 @@
   (unless (= dims (vector-length js)) (raise-index-error))
   (let loop ([#{i : Nonnegative-Fixnum} 0] [#{j : Nonnegative-Fixnum}  0])
     (cond [(i . < . dims)
-           (define di (unsafe-vector-ref ds i))
-           (define ji (unsafe-vector-ref js i))
+           (define di (safe-vector-ref ds i))
+           (define ji (safe-vector-ref js i))
            (cond [(and (exact-integer? ji) (0 . <= . ji) (ji . < . di))
                   (loop (+ i 1) (unsafe-fx+ ji (unsafe-fx* di j)))]
                  [else  (raise-index-error)])]
@@ -110,7 +111,7 @@
   (define: new-js : Indexes (make-vector dims 0))
   (let loop ([#{i : Nonnegative-Fixnum} 0])
     (cond [(i . < . dims)
-           (define di (unsafe-vector-ref ds i))
+           (define di (safe-vector-ref ds i))
            (define ji (unsafe-vector-ref js i))
            (cond [(and (exact-integer? ji) (0 . <= . ji) (ji . < . di))
                   (unsafe-vector-set! new-js i ji)
@@ -125,14 +126,14 @@
   (cond
     [(not (index? n-1)) (error 'unsafe-vector-remove "internal error")]
     [else
-     (define: new-vec : (Vectorof I) (make-vector n-1 (unsafe-vector-ref vec 0)))
+     (define: new-vec : (Vectorof I) (make-vector n-1 (safe-vector-ref vec 0)))
      (let loop ([#{i : Nonnegative-Fixnum} 0])
        (when (i . < . k)
          (unsafe-vector-set! new-vec i (unsafe-vector-ref vec i))
          (loop (+ i 1))))
      (let loop ([#{i : Nonnegative-Fixnum} k])
        (cond [(i . < . n-1)
-              (unsafe-vector-set! new-vec i (unsafe-vector-ref vec (+ i 1)))
+              (unsafe-vector-set! new-vec i (safe-vector-ref vec (+ i 1)))
               (loop (+ i 1))]
              [else  new-vec]))]))
 
