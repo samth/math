@@ -56,10 +56,11 @@
                    [else  (fail)])]
             [else  new-ds])))
   
-  (: unsafe-array-index->value-index (Indexes Indexes -> Nonnegative-Fixnum))
+  (: unsafe-array-index->value-index (~> ([ds : Indexes]
+                                          [js : (Refine [js : Indexes] (= (len js) (len ds)))])
+                                         Nonnegative-Fixnum))
   (define (unsafe-array-index->value-index ds js)
     (define dims (vector-length ds))
-    (unless (= dims (vector-length js)) (error 'foo))
     (let loop ([#{i : Nonnegative-Fixnum} 0] [#{j : Nonnegative-Fixnum} 0])
       (cond [(i . < . dims)
              (define di (safe-vector-ref ds i))

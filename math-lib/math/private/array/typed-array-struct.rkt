@@ -84,24 +84,27 @@
     ((Array-strict! arr))
     (set-box! strict? #t)))
 
-(: unsafe-build-array (All (A) (Indexes (Indexes -> A) -> (Array A))))
+(: unsafe-build-array (All (A) (~> ([ds : Indexes]
+                                    [f : (-> (Refine [js : Indexes] (= (len js) (len ds))) A)])
+                                   (Array A))))
 (define (unsafe-build-array ds f)
   ;; This box's contents get replaced when the array we're constructing is made strict, so that
   ;; the array stops referencing f. If we didn't do this, long chains of array computations would
   ;; keep hold of references to all the intermediate procs, which is a memory leak.
-  (let ([f  (box f)])
+  (let ([f-box  (box f)])
     (define size (check-array-shape-size 'unsafe-build-array ds))
     ;; Sharp readers might notice that strict! doesn't check to see whether the array is already
     ;; strict; that's okay - array-strict! does it instead, which makes the "once strict, always
     ;; strict" invariant easier to ensure in subtypes, which we don't always have control over
     (define (strict!)
-      (let* ([old-f  (unbox f)]
+      (let* ([old-f  (unbox f-box)]
              [vs     (inline-build-array-data ds (λ (js j) (old-f js)) A)])
         ;; Make a new f that just indexes into vs
-        (set-box! f (λ: ([js : Indexes])
-                      (unsafe-vector-ref vs (unsafe-array-index->value-index ds js))))))
+        (set-box! f-box (λ: ([js : (Refine [js : Indexes] (= (len js) (len ds)))])
+                          ;(unless (= (vector-length js) (vector-length ds)) (error 'f))
+                          (unsafe-vector-ref vs (unsafe-array-index->value-index ds ds))))))
     (define unsafe-proc
-      (λ: ([js : Indexes]) ((unbox f) js)))
+      (λ: ([js : Indexes]) ((unbox f-box) js)))
     (Array ds size ((inst box Boolean) #f) strict! unsafe-proc)))
 
 (: unsafe-build-simple-array (All (A) (Indexes (Indexes -> A) -> (Array A))))

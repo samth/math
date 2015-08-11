@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/performance-hint
+(require typed/safe/ops
+         racket/performance-hint
          racket/string
          racket/fixnum
          math/base
@@ -105,13 +106,36 @@
                (values i pivot)]))))
 
 (: elim-rows!
-   (case-> ((Vectorof (Vectorof Flonum)) Index Index Index Flonum Nonnegative-Fixnum -> Void)
-           ((Vectorof (Vectorof Real)) Index Index Index Real Nonnegative-Fixnum -> Void)
-           ((Vectorof (Vectorof Float-Complex)) Index Index Index Float-Complex Nonnegative-Fixnum 
-                                                -> Void)
-           ((Vectorof (Vectorof Number)) Index Index Index Number Nonnegative-Fixnum -> Void)))
+   (case-> (~> ([vec : (Refine [vec : (Vectorof (Vectorof Flonum))] (< -1 i (len vec)))]
+                [m : Index]
+                [i : Index]
+                [j : Index]
+                [piv : Flonum]
+                [start : Nonnegative-Fixnum])
+               Void)
+           (~> ([vec : (Refine [vec : (Vectorof (Vectorof Real))] (< -1 i (len vec)))]
+                [m : Index]
+                [i : Index]
+                [j : Index]
+                [piv : Real]
+                [start : Nonnegative-Fixnum])
+               Void)
+           (~> ([vec : (Refine [vec : (Vectorof (Vectorof Float-Complex))] (< -1 i (len vec)))]
+                [m : Index]
+                [i : Index]
+                [j : Index]
+                [piv : Float-Complex]
+                [start : Nonnegative-Fixnum])
+               Void)
+           (~> ([vec : (Refine [vec : (Vectorof (Vectorof Number))] (< -1 i (len vec)))]
+                [m : Index]
+                [i : Index]
+                [j : Index]
+                [piv : Number]
+                [start : Nonnegative-Fixnum])
+               Void)))
 (define (elim-rows! rows m i j pivot start)
-  (define row_i (unsafe-vector-ref rows i))
+  (define row_i (safe-vector-ref rows i))
   (let loop ([#{l : Nonnegative-Fixnum} start])
     (when (l . fx< . m)
       (unless (l . fx= . i)
