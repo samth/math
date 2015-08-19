@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require "../../base.rkt"
+(require typed/safe/ops
+         "../../base.rkt"
          "../../flonum.rkt"
          "../parameters.rkt"
          "../unsafe.rkt"
@@ -29,7 +30,7 @@
     [else
      (define xs (fcarray-real-data arr))
      (define ys (fcarray-imag-data arr))
-     (define dk (unsafe-vector-ref ds k))
+     (define dk (safe-vector-ref ds k))
      (define n (array-size arr))
      (define new-xs (make-flvector n))
      (define new-ys (make-flvector n))

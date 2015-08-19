@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require "../unsafe.rkt"
+(require typed/safe/ops
+         "../unsafe.rkt"
          "array-struct.rkt"
          "mutable-array.rkt"
          "utils.rkt"
@@ -27,10 +28,10 @@
   (define ds (array-shape arr))
   (define proc (unsafe-array-proc arr))
   (define dims (vector-length ds))
-  (define: js : Indexes (make-vector dims 0))
+  (define js : Indexes (build-vector dims (lambda _ 0)))
   (let: i-loop : (Listof* A) ([i : Nonnegative-Fixnum  0])
     (cond [(i . < . dims)
-           (define di (unsafe-vector-ref ds i))
+           (define di (safe-vector-ref ds i))
            (cond [(= di 0)  (list)]
                  [else
                   (define lsti null)
@@ -47,10 +48,10 @@
   (define ds (array-shape arr))
   (define proc (unsafe-array-proc arr))
   (define dims (vector-length ds))
-  (define: js : Indexes (make-vector dims 0))
+  (define js : Indexes (build-vector dims (lambda _ 0)))
   (let: i-loop : (Vectorof* A) ([i : Nonnegative-Fixnum  0])
     (cond [(i . < . dims)
-           (define di (unsafe-vector-ref ds i))
+           (define di (safe-vector-ref ds i))
            (cond [(= di 0)  (vector)]
                  [else
                   (define veci+1 (i-loop (+ i 1)))

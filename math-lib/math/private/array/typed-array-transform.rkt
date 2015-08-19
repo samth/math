@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/vector
+(require typed/safe/ops
+         racket/vector
          "../unsafe.rkt"
          "array-struct.rkt"
          "array-broadcast.rkt"
@@ -99,8 +100,8 @@
   (define dims (vector-length ds))
   (cond [(or (k . < . 0) (k . >= . dims))
          (raise-argument-error 'array-axis-ref (format "Index < ~a" dims) 1 arr k jk)]
-        [(or (jk . < . 0) (jk . >= . (unsafe-vector-ref ds k)))
-         (raise-argument-error 'array-axis-ref (format "Index < ~a" (unsafe-vector-ref ds k))
+        [(or (jk . < . 0) (jk . >= . (safe-vector-ref ds k)))
+         (raise-argument-error 'array-axis-ref (format "Index < ~a" (safe-vector-ref ds k))
                            2 arr k jk)]
         [else
          (define new-ds (unsafe-vector-remove ds k))

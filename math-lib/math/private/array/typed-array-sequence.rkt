@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/vector
+(require typed/safe/ops
+         racket/vector
          "../unsafe.rkt"
          "array-struct.rkt"
          "array-transform.rkt"
@@ -68,7 +69,7 @@
   (define ds (array-shape arr))
   (define dims (vector-length ds))
   (cond [(and (0 . <= . k) (k . < . dims))
-         (define dk (unsafe-vector-ref ds k))
+         (define dk (safe-vector-ref ds k))
          (make-do-sequence
           (λ ()
             (values (λ: ([jk : Integer]) (array-axis-ref arr k jk))
@@ -86,7 +87,7 @@
   (define ds (array-shape arr))
   (define dims (vector-length ds))
   (cond [(and (0 . <= . k) (k . < . dims))
-         (define dk (unsafe-vector-ref ds k))
+         (define dk (safe-vector-ref ds k))
          (build-list dk (λ: ([jk : Index]) (array-axis-ref arr k jk)))]
         [else
          (error 'array->array-list (format "expected axis Index < ~e; given ~e" dims k))]))

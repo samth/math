@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require "../array/array-struct.rkt"
+(require typed/safe/ops
+         "../array/array-struct.rkt"
          "../array/array-fold.rkt"
          "../array/array-pointwise.rkt"
          "../unsafe.rkt")
@@ -27,31 +28,31 @@
 (define (square-matrix? arr)
   (define ds (array-shape arr))
   (and (= (vector-length ds) 2)
-       (let ([d0  (unsafe-vector-ref ds 0)]
-             [d1  (unsafe-vector-ref ds 1)])
+       (let ([d0  (safe-vector-ref ds 0)]
+             [d1  (safe-vector-ref ds 1)])
          (and (> d0 0) (> d1 0) (= d0 d1)))))
 
 (: row-matrix? (All (A) ((Array A) -> Boolean)))
 (define (row-matrix? arr)
   (define ds (array-shape arr))
   (and (= (vector-length ds) 2)
-       (= (unsafe-vector-ref ds 0) 1)
-       (> (unsafe-vector-ref ds 1) 0)))
+       (= (safe-vector-ref ds 0) 1)
+       (> (safe-vector-ref ds 1) 0)))
 
 (: col-matrix? (All (A) ((Array A) -> Boolean)))
 (define (col-matrix? arr)
   (define ds (array-shape arr))
   (and (= (vector-length ds) 2)
-       (> (unsafe-vector-ref ds 0) 0)
-       (= (unsafe-vector-ref ds 1) 1)))
+       (> (safe-vector-ref ds 0) 0)
+       (= (safe-vector-ref ds 1) 1)))
 
 (: matrix-shape (All (A) ((Array A) -> (Values Index Index))))
 (define (matrix-shape a)
   (define ds (array-shape a))
   (if (and (> (array-size a) 0)
            (= (vector-length ds) 2))
-      (values (unsafe-vector-ref ds 0)
-              (unsafe-vector-ref ds 1))
+      (values (safe-vector-ref ds 0)
+              (safe-vector-ref ds 1))
       (raise-argument-error 'matrix-shape "matrix?" a)))
 
 (: square-matrix-size (All (A) ((Array A) -> Index)))

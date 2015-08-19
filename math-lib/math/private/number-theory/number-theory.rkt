@@ -1,6 +1,7 @@
 #lang typed/racket
 
-(require "../base/base-random.rkt"
+(require typed/safe/ops
+         "../base/base-random.rkt"
          "divisibility.rkt"
          "modular-arithmetic.rkt"
          "types.rkt"
@@ -194,19 +195,18 @@
   (let ()
     ; TODO: Only store odd integers in this table
     (define N *VERY-SMALL-PRIME-LIMIT*)
-    (define ps (make-vector (+ N 1) #t))
-    (define ! vector-set!)
-    (! ps 0 #f)
-    (! ps 1 #f)
+    (define ps (build-vector (+ N 1) (lambda _ #t)))
+    (safe-vector-set! ps 0 #f)
+    (safe-vector-set! ps 1 #f)
     (for ([n (in-range 2 (+ N 1))])
       (when (vector-ref ps n)
         (for ([m (in-range (+ n n) (+ N 1) n)])
-          (! ps m #f))))
+          (vector-set! ps m #f))))
     (lambda (n)
       (let ([n (abs n)])
         (cond 
           [(< n N)
-           (vector-ref ps n)]
+           (safe-vector-ref ps n)]
           [(< n *SMALL-PRIME-LIMIT*)
            (small-prime? n)]
           [else

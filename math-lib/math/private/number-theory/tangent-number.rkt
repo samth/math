@@ -10,7 +10,7 @@
         [else
          ; Implementation note:
          ;   See "Concrete Mathematics" p 287 for the method
-         (define: T : (Vectorof Natural) (make-vector (+ n 2) 0))
+         (define T : (Vectorof Natural) (build-vector (+ n 2) (lambda _ 0)))
          ; T[x]=x
          (vector-set! T 1 1)
          (for: ([k : Natural (in-range (+ n 1))])

@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require (for-syntax racket/base syntax/parse)
+(require typed/safe/ops
+         (for-syntax racket/base syntax/parse)
          racket/vector
          "../../base.rkt"
          "../../bigfloat.rkt"
@@ -69,7 +70,7 @@
        (define mx (chebyshev-poly-max p))
        (λ: ([x : A])
          (define i (- n 1))
-         (define c (unsafe-vector-ref cs i))
+         (define c (safe-vector-ref cs i))
          (define y (num/ (num- (num* x 2.num) (num+ mn mx))
                          (num- mx mn)))
          (define y2 (num* y 2.num))

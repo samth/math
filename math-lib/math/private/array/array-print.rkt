@@ -2,7 +2,8 @@
 
 ;; Defines the custom printer used for array values
 
-(require racket/pretty
+(require typed/safe/ops
+         racket/pretty
          racket/fixnum
          "array-struct.rkt"
          "utils.rkt")
@@ -64,12 +65,12 @@
     (define dims (vector-length ds))
     (define proc (unsafe-array-proc arr))
     ;; We mutate this in row-major order instead of creating a new index vector for every element
-    (define: js : Indexes (make-vector dims 0))
+    (define: js : Indexes (build-vector dims (lambda _ 0)))
     ;; For each shape axis
     (let i-loop ([#{i : Nonnegative-Fixnum} 0])
-      (cond [(i . fx< . dims)  ; proves i : Index
+      (cond [(i . < . dims)  ; proves i : Index
              (write-string "#[" port)
-             (define di (vector-ref ds i))  ; length of axis i
+             (define di (safe-vector-ref ds i))  ; length of axis i
              ;; For each index on this axis
              (let ji-loop ([#{ji : Nonnegative-Fixnum} 0])
                (when (ji . fx< . di)  ; proves ji : Index

@@ -1,6 +1,7 @@
 #lang typed/racket
 
-(require racket/fixnum
+(require typed/safe/ops
+         racket/fixnum
          "array-struct.rkt"
          "../unsafe.rkt"
          "utils.rkt")
@@ -32,7 +33,7 @@
        (let: loop : A ([k : Nonnegative-Fixnum  0])
          (cond [(k . < . old-dims)
                 (define new-jk (unsafe-vector-ref new-js (+ k shift)))
-                (define old-dk (unsafe-vector-ref old-ds k))
+                (define old-dk (safe-vector-ref old-ds k))
                 (define old-jk (unsafe-fxmodulo new-jk old-dk))
                 (unsafe-vector-set! old-js k old-jk)
                 (loop (+ k 1))]
@@ -46,17 +47,30 @@
                    new-arr
                    (array-default-strict new-arr))]))
 
-(: shape-insert-axes (Indexes Integer -> Indexes))
+(: shape-insert-axes (~> ([ds : Indexes]
+                          [n : Integer])
+                         (Refine [out : Indexes]
+                                 (= (len out) (+ (len ds) n)))))
 (define (shape-insert-axes ds n)
-  (vector-append ((inst make-vector Index) n 1) ds))
+  (: v Indexes)
+  (define v (vector-append ((inst make-vector Index) n 1) ds))
+  (if (= (vector-length v) (+ (vector-length ds) n))
+      v
+      (error 'append-length-error)))
 
-(: shape-permissive-broadcast (Indexes Indexes Index (-> Nothing) -> Indexes))
+(: shape-permissive-broadcast (~> ([ds1 : Indexes]
+                                   [ds2 : Indexes]
+                                   [dims : (Refine [dims : Index]
+                                                   (= dims (len ds1))
+                                                   (= dims (len ds2)))]
+                                   [fail : (-> Nothing)])
+                                  Indexes))
 (define (shape-permissive-broadcast ds1 ds2 dims fail)
   (define: new-ds : Indexes (make-vector dims 0))
   (let loop ([#{k : Nonnegative-Fixnum} 0])
     (cond [(k . < . dims)
-           (define dk1 (unsafe-vector-ref ds1 k))
-           (define dk2 (unsafe-vector-ref ds2 k))
+           (define dk1 (safe-vector-ref ds1 k))
+           (define dk2 (safe-vector-ref ds2 k))
            (unsafe-vector-set!
             new-ds k
             (cond [(or (= dk1 0) (= dk2 0))  (fail)]
@@ -64,13 +78,19 @@
            (loop (+ k 1))]
           [else  new-ds])))
 
-(: shape-normal-broadcast (Indexes Indexes Index (-> Nothing) -> Indexes))
+(: shape-normal-broadcast (~> ([ds1 : Indexes]
+                               [ds2 : Indexes]
+                               [dims : (Refine [dims : Index]
+                                               (= dims (len ds1))
+                                               (= dims (len ds2)))]
+                               [fail : (-> Nothing)])
+                              Indexes))
 (define (shape-normal-broadcast ds1 ds2 dims fail)
-  (define: new-ds : Indexes (make-vector dims 0))
+  (define new-ds : Indexes (build-vector dims (lambda _ 0)))
   (let loop ([#{k : Nonnegative-Fixnum} 0])
     (cond [(k . < . dims)
-           (define dk1 (unsafe-vector-ref ds1 k))
-           (define dk2 (unsafe-vector-ref ds2 k))
+           (define dk1 (safe-vector-ref ds1 k))
+           (define dk2 (safe-vector-ref ds2 k))
            (unsafe-vector-set!
             new-ds k
             (cond [(= dk1 dk2)  dk1]
@@ -93,8 +113,12 @@
                              [(n . < . 0)  (values ds1 (shape-insert-axes ds2 (- n)) dims1)]
                              [else         (values ds1 ds2 dims1)])])
            (if (eq? broadcasting 'permissive)
-               (shape-permissive-broadcast ds1 ds2 dims fail)
-               (shape-normal-broadcast ds1 ds2 dims fail)))]))
+               (if (= dims (vector-length ds1) (vector-length ds2))
+                   (shape-permissive-broadcast ds1 ds2 dims fail)
+                   (error 'foo))
+               (if (= dims (vector-length ds1) (vector-length ds2))
+                   (shape-normal-broadcast ds1 ds2 dims fail)
+                   (error 'foo))))]))
 
 (: array-shape-broadcast (case-> ((Listof Indexes) -> Indexes)
                                  ((Listof Indexes) (U #f #t 'permissive) -> Indexes)))

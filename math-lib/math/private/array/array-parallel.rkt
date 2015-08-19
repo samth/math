@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/future
+(require typed/safe/ops
+         racket/future
          racket/list
          "../unsafe.rkt"
          "../parameters.rkt"
@@ -11,6 +12,37 @@
 (provide parallel-array->mutable-array
          parallel-array-strict)
 
+; Refinement added to use safe-vector
+(: safe-eval-array-proc! (All (A) (~> ([ds : Indexes]
+                                       [proc : (Indexes -> A)]
+                                       [js : (Refine [js : Indexes]
+                                                     (= (len js) (len ds)))]
+                                       [vs : (Vectorof A)]
+                                       [start : Index]
+                                       [end : (Refine [end : Index]
+                                                      (= end (len vs)))])
+                                      Void)))
+(define (safe-eval-array-proc! ds proc js vs start end)
+  (define dims (vector-length ds))
+  (unsafe-value-index->array-index! ds start js)
+  (let: k-loop : Nonnegative-Fixnum ([k : Nonnegative-Fixnum  0]
+                                     [j : Nonnegative-Fixnum  start])
+    (cond [(k . < . dims)
+           (define: dk : Index (safe-vector-ref ds k))
+           (let: jk-loop : Nonnegative-Fixnum ([jk : Nonnegative-Fixnum  (safe-vector-ref js k)]
+                                               [j : Nonnegative-Fixnum  j])
+             (cond [(jk . < . dk)
+                    (safe-vector-set! js k jk)
+                    (jk-loop (+ jk 1) (k-loop (+ k 1) j))]
+                   [else
+                    (safe-vector-set! js k 0)
+                    j]))]
+          [(j . >= . end)  j]
+          [else  (define v (proc js))
+                 (safe-vector-set! vs j v)
+                 (unsafe-fx+ j 1)]))
+  (void))
+
 (: eval-array-proc! (All (A) (Indexes (Indexes -> A) Indexes (Vectorof A) Index Index -> Void)))
 (define (eval-array-proc! ds proc js vs start end)
   (define dims (vector-length ds))
@@ -18,7 +50,7 @@
   (let: k-loop : Nonnegative-Fixnum ([k : Nonnegative-Fixnum  0]
                                      [j : Nonnegative-Fixnum  start])
     (cond [(k . < . dims)
-           (define: dk : Index (unsafe-vector-ref ds k))
+           (define: dk : Index (safe-vector-ref ds k))
            (let: jk-loop : Nonnegative-Fixnum ([jk : Nonnegative-Fixnum  (unsafe-vector-ref js k)]
                                                [j : Nonnegative-Fixnum  j])
              (cond [(jk . < . dk)

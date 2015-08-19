@@ -1,6 +1,7 @@
 #lang typed/racket
 
-(require "../../flonum.rkt"
+(require typed/safe/ops
+         "../../flonum.rkt"
          "order-statistics.rkt"
          "statistics-utils.rkt")
 
@@ -62,7 +63,7 @@
                   (cond [(not i1)  (values a* b*)]
                         [else
                          ;(printf "α = ~v~n~n" (- (flvector-ref ws i1) (flvector-ref ws i0)))
-                         (define a (vector-ref xs i0))
+                         (define a (safe-vector-ref xs i0))
                          (define b (vector-ref xs i1))
                          (define d (abs (metric b a)))
                          (cond [(d . < . d*)  (loop (+ i0 1) i1 a b d)]

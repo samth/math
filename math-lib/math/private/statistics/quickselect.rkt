@@ -9,7 +9,8 @@ Seems to be faster than sort-and-direct-ref on sequences with length > 350 or so
 otherwise
 |#
 
-(require racket/fixnum
+(require typed/safe/ops
+         racket/fixnum
          "../unsafe.rkt"
          "statistics-utils.rkt")
 

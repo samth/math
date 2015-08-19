@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require "../unsafe.rkt")
+(require typed/safe/ops
+         "../unsafe.rkt")
 
 (provide factorial permutations multinomial)
 
@@ -14,12 +15,13 @@
 (: fact-table (Vectorof Positive-Integer))
 (define fact-table
   (list->vector
-   (reverse
-    (foldl (λ: ([n  : Positive-Integer]
-                [ns : (Listof Positive-Integer)])
-             (cons (* n (car ns)) ns))
-           '(1)
-           (build-list (- fact-table-size 1) add1)))))
+           (reverse
+            (foldl (λ: ([n  : Positive-Integer]
+                        [ns : (Listof Positive-Integer)])
+                     (cons (* n (car ns)) ns))
+                   '(1)
+                   (build-list (- fact-table-size 1) add1)))))
+
 
 (: simple-cutoff Positive-Fixnum)
 ;; The point at which it seems to be faster to use a more complicated recurrence
@@ -27,8 +29,9 @@
 
 (: factorial-simple (Nonnegative-Fixnum -> Positive-Integer))
 (define (factorial-simple n)
-  (cond [(n . < . fact-table-size)  (vector-ref fact-table n)]
-        [else  (* n (factorial-simple (- n 1)))]))
+  (cond [(n . < . (vector-length fact-table))  (safe-vector-ref fact-table n)]
+        [(< 0 n) (* n (factorial-simple (- n 1)))]
+        [else 1]))
 
 (: factorial (case-> (Zero -> One)
                      (One -> One)
