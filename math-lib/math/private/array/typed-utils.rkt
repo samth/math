@@ -16,14 +16,16 @@
 (define-type In-Indexes (U (Vectorof Integer) Indexes))
 
 (begin-encourage-inline
-  
+
+   ; <refined-local> new-js required a refinement that its length is dims.
   (: vector->supertype-vector (All (A B) ((Vectorof A) -> (Vectorof (U A B)))))
   (define (vector->supertype-vector js)
     (define dims (vector-length js))
     (cond [(= dims 0)  (vector)]
-          [else  (define: new-js : (Vectorof (U A B)) (make-vector dims (safe-vector-ref js 0)))
+          [else  (define new-js : (Refine [new-js : (Vectorof (U A B))]
+                                          (= dims (len new-js))) (make-vector dims (safe-vector-ref js 0)))
                  (let loop ([#{i : Nonnegative-Fixnum} 1])
-                   (cond [(i . < . dims)  (unsafe-vector-set! new-js i (safe-vector-ref js i))
+                   (cond [(i . < . dims)  (safe-vector-set! new-js i (safe-vector-ref js i))
                                           (loop (+ i 1))]
                          [else  new-js]))]))
   
@@ -43,20 +45,22 @@
     (define size (array-shape-size ds))
     (cond [(index? size)  size]
           [else  (error name "array size ~e (for shape ~e) is too large (is not an Index)" size ds)]))
-  
+
+  ; <refined-local> new-ds required a refinement that its length is dims.
   (: check-array-shape (In-Indexes (-> Nothing) -> Indexes))
   (define (check-array-shape ds fail)
     (define dims (vector-length ds))
-    (define: new-ds : Indexes (make-vector dims 0))
+    (define new-ds : (Refine [new-ds : Indexes]
+                             (= dims (len new-ds))) (make-vector dims 0))
     (let loop ([#{i : Nonnegative-Fixnum} 0])
       (cond [(i . < . dims)
              (define di (safe-vector-ref ds i))
-             (cond [(index? di)  (unsafe-vector-set! new-ds i di)
+             (cond [(index? di)  (safe-vector-set! new-ds i di)
                                  (loop (+ i 1))]
                    [else  (fail)])]
             [else  new-ds])))
 
-  ;; Safe version of array-index->value-index
+  ;; <refined> Safe version of array-index->value-index
   (: safe-array-index->value-index (~> ([ds : Indexes]
                                         [js : (Refine [js : Indexes]
                                                       (<= (len ds) (len js)))])
@@ -80,14 +84,32 @@
              (loop (+ i 1) (unsafe-fx+ ji (unsafe-fx* di j)))]
             [else  j])))
   
+  ; <refined> Refinements on js added to make safe version.
+  (: safe-value-index->array-index! (~> ([ds : Indexes]
+                                         [j : Nonnegative-Fixnum]
+                                         [js : (Refine [js : Indexes]
+                                                       (= (len ds) (len js)))])
+                                        Void))
+  (define (safe-value-index->array-index! ds j js)
+    (with-asserts ([j index?])
+      (define dims (vector-length ds))
+      (let: loop : Index ([i : (Refine [i : Nonnegative-Fixnum] (<= i dims)) dims] [s : Nonnegative-Fixnum  1])
+        (cond [(zero? i)  j]
+              [else  (let* ([i  (- i 1)]
+                            [j  (loop i (unsafe-fx* s (safe-vector-ref ds i)))])
+                       (safe-vector-set! js i (fxquotient j s))
+                       (unsafe-fxmodulo j s))]))
+      (void)))
+
+  ; <refined-local> Refinement on i for ds
   (: unsafe-value-index->array-index! (Indexes Nonnegative-Fixnum Indexes -> Void))
   (define (unsafe-value-index->array-index! ds j js)
     (with-asserts ([j index?])
       (define dims (vector-length ds))
-      (let: loop : Index ([i : Nonnegative-Fixnum  dims] [s : Nonnegative-Fixnum  1])
+      (let: loop : Index ([i : (Refine [i : Nonnegative-Fixnum] (<= i dims)) dims] [s : Nonnegative-Fixnum  1])
         (cond [(zero? i)  j]
               [else  (let* ([i  (- i 1)]
-                            [j  (loop i (unsafe-fx* s (unsafe-vector-ref ds i)))])
+                            [j  (loop i (unsafe-fx* s (safe-vector-ref ds i)))])
                        (unsafe-vector-set! js i (fxquotient j s))
                        (unsafe-fxmodulo j s))]))
       (void)))
@@ -117,7 +139,7 @@
                  [else  (raise-index-error)])]
           [else  j])))
 
-;; Safe version check-array-indexes
+;; <refined> Safe version check-array-indexes
 (: safe-check-array-indexes (~> ([name : Symbol]
                                  [ds : Indexes]
                                  [js : (Refine [js : In-Indexes]
@@ -127,23 +149,26 @@
   (define (raise-index-error) (raise-array-index-error name ds js))
   (define dims (vector-length ds))
   (unless (= dims (vector-length js)) (raise-index-error))
-  (define: new-js : Indexes (make-vector dims 0))
+  (define new-js : (Refine [new-js : Indexes]
+                           (= dims (len new-js))) (make-vector dims 0))
   (let loop ([#{i : Nonnegative-Fixnum} 0])
     (cond [(i . < . dims)
            (define di (safe-vector-ref ds i))
            (define ji (safe-vector-ref js i))
            (cond [(and (exact-integer? ji) (0 . <= . ji) (ji . < . di))
-                  (unsafe-vector-set! new-js i ji)
+                  (safe-vector-set! new-js i ji)
                   (loop (+ i 1))]
                  [else  (raise-index-error)])]
           [else  new-js])))
 
+; <refined-local> Refinement added for new-js.
 (: check-array-indexes (Symbol Indexes In-Indexes -> Indexes))
 (define (check-array-indexes name ds js)
   (define (raise-index-error) (raise-array-index-error name ds js))
   (define dims (vector-length ds))
   (unless (= dims (vector-length js)) (raise-index-error))
-  (define: new-js : Indexes (make-vector dims 0))
+  (define new-js : (Refine [new-js : Indexes]
+                           (= dims (len new-js))) (make-vector dims 0))
   (let loop ([#{i : Nonnegative-Fixnum} 0])
     (cond [(i . < . dims)
            (define di (safe-vector-ref ds i))
@@ -154,6 +179,7 @@
                  [else  (raise-index-error)])]
           [else  new-js])))
 
+; <refined> Safe version of vector-remove
 (: safe-vector-remove (All (I) (~> ([vec : (Vectorof I)]
                                     [k : (Refine [k : Index]
                                                  (< k (len vec)))])
@@ -164,17 +190,19 @@
   (cond
     [(not (index? n-1)) (error 'unsafe-vector-remove "internal error")]
     [else
-     (define new-vec : (Vectorof I) (build-vector n-1 (lambda _ (safe-vector-ref vec 0))))
+     (define new-vec : (Refine [new-vec : (Vectorof I)]
+                               (= n-1 (len new-vec))) (make-vector n-1 (safe-vector-ref vec 0)))
      (let loop ([#{i : Nonnegative-Fixnum} 0])
        (when (i . < . k)
-         (unsafe-vector-set! new-vec i (safe-vector-ref vec i))
+         (safe-vector-set! new-vec i (safe-vector-ref vec i))
          (loop (+ i 1))))
      (let loop ([#{i : Nonnegative-Fixnum} k])
        (cond [(i . < . n-1)
-              (unsafe-vector-set! new-vec i (safe-vector-ref vec (+ i 1)))
+              (safe-vector-set! new-vec i (safe-vector-ref vec (+ i 1)))
               (loop (+ i 1))]
              [else  new-vec]))]))
 
+; <refined-local> Internal refinement on new-vec added
 (: unsafe-vector-remove (All (I) ((Vectorof I) Index -> (Vectorof I))))
 (define (unsafe-vector-remove vec k)
   (define n (vector-length vec))
@@ -182,18 +210,19 @@
   (cond
     [(not (index? n-1)) (error 'unsafe-vector-remove "internal error")]
     [else
-     (define: new-vec : (Vectorof I) (make-vector n-1 (safe-vector-ref vec 0)))
+     (define new-vec : (Refine [new-vec : (Vectorof I)]
+                               (= n-1 (len new-vec))) (make-vector n-1 (safe-vector-ref vec 0)))
      (let loop ([#{i : Nonnegative-Fixnum} 0])
        (when (i . < . k)
          (unsafe-vector-set! new-vec i (unsafe-vector-ref vec i))
          (loop (+ i 1))))
      (let loop ([#{i : Nonnegative-Fixnum} k])
        (cond [(i . < . n-1)
-              (unsafe-vector-set! new-vec i (safe-vector-ref vec (+ i 1)))
+              (safe-vector-set! new-vec i (safe-vector-ref vec (+ i 1)))
               (loop (+ i 1))]
              [else  new-vec]))]))
 
-;; Safe insert function
+; <refined> Safe insert function
 (: safe-vector-insert (All (I) (~> ([vec : (Vectorof I)]
                                     [k : (Refine [k : Index]
                                                  (< k (len vec)))]
@@ -201,7 +230,8 @@
                                    (Vectorof I))))
 (define (safe-vector-insert vec k v)
   (define n (vector-length vec))
-  (define dst-vec : (Vectorof I) (build-vector (+ n 1) (lambda _ v)))
+  (define dst-vec : (Refine [dst-vec : (Vectorof I)]
+                            (= (+ n 1) (len dst-vec))) (make-vector (+ n 1) v))
   (let loop ([#{i : Nonnegative-Fixnum} 0])
     (when (i . < . k)
       (unsafe-vector-set! dst-vec i (safe-vector-ref vec i))
@@ -209,14 +239,16 @@
   (let loop ([#{i : Nonnegative-Fixnum} k])
     (when (i . < . n)
       (let ([i+1  (+ i 1)])
-        (unsafe-vector-set! dst-vec i+1 (safe-vector-ref vec i))
+        (safe-vector-set! dst-vec i+1 (safe-vector-ref vec i))
         (loop i+1))))
   dst-vec)
 
+; <refined-local> Internal refinement on dst-vec added.
 (: unsafe-vector-insert (All (I) ((Vectorof I) Index I -> (Vectorof I))))
 (define (unsafe-vector-insert vec k v)
   (define n (vector-length vec))
-  (define: dst-vec : (Vectorof I) (make-vector (+ n 1) v))
+  (define dst-vec : (Refine [dst-vec : (Vectorof I)]
+                            (= (+ n 1) (len dst-vec))) (make-vector (+ n 1) v))
   (let loop ([#{i : Nonnegative-Fixnum} 0])
     (when (i . < . k)
       (unsafe-vector-set! dst-vec i (unsafe-vector-ref vec i))
@@ -224,7 +256,7 @@
   (let loop ([#{i : Nonnegative-Fixnum} k])
     (when (i . < . n)
       (let ([i+1  (+ i 1)])
-        (unsafe-vector-set! dst-vec i+1 (safe-vector-ref vec i))
+        (safe-vector-set! dst-vec i+1 (safe-vector-ref vec i))
         (loop i+1))))
   dst-vec)
 
@@ -234,23 +266,25 @@
   (define-values (_line col _pos) (port-next-location port))
   (if col col 0))
 
+; <refine-local> Refinements on visited, new-perm, and new-ds.
+; This could possibly be rewritten without the fail input using refinements.
 (: apply-permutation (All (A) ((Listof Integer) Indexes (-> Nothing) -> (Values Indexes Indexes))))
 (define (apply-permutation perm ds fail)
   (define dims (vector-length ds))
   (unless (= dims (length perm)) (fail))
-  (define visited  : (Vectorof Boolean) (build-vector dims (lambda _ #f)))
-  (define new-perm : (Vectorof Index) (build-vector dims (lambda _ 0)))
-  (define new-ds   : Indexes (make-vector dims 0))
+  (define visited  : (Refine [visited : (Vectorof Boolean)] (= dims (len visited))) (make-vector dims #f))
+  (define new-perm : (Refine [new-perm : (Vectorof Index)] (= dims (len new-perm))) (make-vector dims 0))
+  (define new-ds   : (Refine [new-ds : Indexes] (= dims (len new-ds))) (make-vector dims 0))
   ;; This loop fails if it writes to a `visited' element twice, or an element of perm is not an
   ;; Index < dims
   (let loop ([perm perm] [#{i : Nonnegative-Fixnum} 0])
     (cond [(i . < . dims)
            (define k (unsafe-car perm))
            (cond [(and (0 . <= . k) (k . < . dims))
-                  (cond [(unsafe-vector-ref visited k)  (fail)]
-                        [else  (unsafe-vector-set! visited k #t)])
-                  (unsafe-vector-set! new-ds i (safe-vector-ref ds k))
-                  (unsafe-vector-set! new-perm i k)]
+                  (cond [(safe-vector-ref visited k)  (fail)]
+                        [else  (safe-vector-set! visited k #t)])
+                  (safe-vector-set! new-ds i (safe-vector-ref ds k))
+                  (safe-vector-set! new-perm i k)]
                  [else  (fail)])
            (loop (unsafe-cdr perm) (+ i 1))]
           [else  (values new-ds new-perm)])))
@@ -269,6 +303,25 @@
         [else  (define first-xs (first xs))
                (cond [(equal? x first-xs)  (all-equal? first-xs (rest xs))]
                      [else  #f])]))
+
+; <refined> Bunch of refinements added, local included.
+(: safe-next-indexes! (~> ([ds : Indexes]
+                           [dims : (Refine [dims : Index] (= dims (len ds)))]
+                           [js : (Refine [js : Indexes] (= dims (len js)))])
+                          Void))
+;; Sets js to the next vector of indexes, in row-major order
+(define (safe-next-indexes! ds dims js)
+  (let loop ([#{k : (Refine [k : Nonnegative-Fixnum] (<= k dims))}  dims])
+    (unless (zero? k)
+      (let ([k  (- k 1)])
+        (define jk (safe-vector-ref js k))
+        (define dk (safe-vector-ref ds k))
+        (let ([jk  (+ jk 1)])
+          (cond [(jk . >= . dk)
+                 (safe-vector-set! js k 0)
+                 (loop k)]
+                [else
+                 (safe-vector-set! js k jk)]))))))
 
 (: next-indexes! (Indexes Index Indexes -> Void))
 ;; Sets js to the next vector of indexes, in row-major order
