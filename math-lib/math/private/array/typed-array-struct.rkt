@@ -58,6 +58,16 @@
   ;#:property prop:procedure array-procedure
   )
 
+#;
+(struct: (A) Safe-Array ([shape : Indexes]
+                         [size : Index]
+                         [strict? : (Boxof Boolean)]
+                         [strict! : (-> Void)]
+                         [unsafe-proc : (~> ([js : (Refine [js : Indexes] (= (len js) (len shape)))]) A)])
+  #:property prop:custom-print-quotable 'never
+  #:property prop:custom-write (λ (arr port mode) ((array-custom-printer) arr 'array port mode))
+  #:property prop:equal+hash (list array-recur-equal? array-hash-code array-hash-code))
+
 (define-syntax-rule (make-unsafe-array-proc ds ref)
   (λ: ([js : Indexes])
     (ref (unsafe-array-index->value-index ds js))))
@@ -103,6 +113,15 @@
     (define unsafe-proc
       (λ: ([js : Indexes]) ((unbox f) js)))
     (Array ds size ((inst box Boolean) #f) strict! unsafe-proc)))
+
+#;#;
+(: safe-build-simple-array (All (A) (~> ([ds : Indexes]
+                                         [f : (~> ([js : (Refine [js : Indexes] (= (len js) (len ds)))])
+                                             A)])
+                                        (Array A))))
+(define (safe-build-simple-array ds f)
+  (define size (check-array-shape-size 'unsafe-build-simple-array ds))
+  (Safe-Array ds size (box #t) void f))
 
 (: unsafe-build-simple-array (All (A) (Indexes (Indexes -> A) -> (Array A))))
 (define (unsafe-build-simple-array ds f)

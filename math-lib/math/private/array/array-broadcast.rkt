@@ -58,6 +58,8 @@
       v
       (error 'append-length-error)))
 
+; <refined-local> shape-persmissive-broadcast is a local function, so adding refinements has no global side-effects.
+; Refinements are added both in the definition for shape-permissive-broadcase and for the newly made new-ds.
 (: shape-permissive-broadcast (~> ([ds1 : Indexes]
                                    [ds2 : Indexes]
                                    [dims : (Refine [dims : Index]
@@ -66,12 +68,12 @@
                                    [fail : (-> Nothing)])
                                   Indexes))
 (define (shape-permissive-broadcast ds1 ds2 dims fail)
-  (define: new-ds : Indexes (make-vector dims 0))
+  (define new-ds : (Refine [new-ds : Indexes] (= dims (len new-ds))) (make-vector dims 0))
   (let loop ([#{k : Nonnegative-Fixnum} 0])
     (cond [(k . < . dims)
            (define dk1 (safe-vector-ref ds1 k))
            (define dk2 (safe-vector-ref ds2 k))
-           (unsafe-vector-set!
+           (safe-vector-set!
             new-ds k
             (cond [(or (= dk1 0) (= dk2 0))  (fail)]
                   [else  (fxmax dk1 dk2)]))
@@ -86,12 +88,12 @@
                                [fail : (-> Nothing)])
                               Indexes))
 (define (shape-normal-broadcast ds1 ds2 dims fail)
-  (define new-ds : Indexes (build-vector dims (lambda _ 0)))
+  (define new-ds : (Refine [new-ds : Indexes] (= dims (len new-ds))) (make-vector dims 0))
   (let loop ([#{k : Nonnegative-Fixnum} 0])
     (cond [(k . < . dims)
            (define dk1 (safe-vector-ref ds1 k))
            (define dk2 (safe-vector-ref ds2 k))
-           (unsafe-vector-set!
+           (safe-vector-set!
             new-ds k
             (cond [(= dk1 dk2)  dk1]
                   [(and (= dk1 1) (dk2 . > . 0))  dk2]
