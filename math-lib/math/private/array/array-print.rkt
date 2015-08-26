@@ -65,7 +65,8 @@
     (define dims (vector-length ds))
     (define proc (unsafe-array-proc arr))
     ;; We mutate this in row-major order instead of creating a new index vector for every element
-    (define: js : Indexes (build-vector dims (lambda _ 0)))
+    ; <refined-local> Refinement added in js for safe-vector-set!
+    (define js : (Refine [js : Indexes] (= dims (len js))) (make-vector dims 0))
     ;; For each shape axis
     (let i-loop ([#{i : Nonnegative-Fixnum} 0])
       (cond [(i . < . dims)  ; proves i : Index
@@ -74,7 +75,7 @@
              ;; For each index on this axis
              (let ji-loop ([#{ji : Nonnegative-Fixnum} 0])
                (when (ji . fx< . di)  ; proves ji : Index
-                 (vector-set! js i ji)
+                 (safe-vector-set! js i ji)
                  ;; Print either nested elements or the element here
                  (i-loop (fx+ i 1))
                  ;; Print delimiter when not printing the last element on this axis

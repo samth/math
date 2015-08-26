@@ -26,6 +26,8 @@
   (define proc (unsafe-array-proc arr))
   (unsafe-build-array
    new-ds (λ: ([js : Indexes])
+            ; <nope> Requires a change in the type of unsafe-build array, which requires
+            ; structs to cooperate.
             (define jk (unsafe-vector-ref js k))
             (f (proc (unsafe-vector-remove js k)) jk))))
 
