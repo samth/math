@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/list
+(require typed/safe/ops
+         racket/list
          racket/match
          racket/vector
          racket/performance-hint
@@ -156,8 +157,9 @@
     (cond [(step . < . 0)  (quotient (+ (- end start) (+ step 1)) step)]
           [else  (quotient (+ (- end start) (- step 1)) step)]))
   (cond [(size . <= . 0)  (vector)]
-        [(index? size)
-         (define: jks : (Vectorof Index) (make-vector size 0))
+        [(index? size)         
+         ; <refined-local> Refinement added to jks for vector-set! operation.
+         (define jks : (Refine [jks : (Vectorof Index)] (= size (len jks))) (make-vector size 0))
          (let loop ([#{i : Nonnegative-Fixnum} 0] [#{jk : Fixnum} start])
            (cond [(i . >= . size)  jks]
                  [(or (jk . < . 0) (jk . >= . dk))
@@ -165,7 +167,7 @@
                          "expected Index < ~e in slice ~e (axis ~e); given ~e"
                          dk s k jk)]
                  [else
-                  (unsafe-vector-set! jks i jk)
+                  (safe-vector-set! jks i jk)
                   (loop (+ i 1) (unsafe-fx+ jk step))]))]
         [else
          (error 'array-slice-ref "axis for slice ~e (axis ~e) is too large" s k)]))

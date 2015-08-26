@@ -80,6 +80,8 @@
            (loop (+ k 1))]
           [else  new-ds])))
 
+; <refined-local> shape-normal-broadcast is a local function, so adding refinements has no global side-effects.
+; Refinements are added both in the definition for shape-normal-broadcase and for the newly made new-ds.
 (: shape-normal-broadcast (~> ([ds1 : Indexes]
                                [ds2 : Indexes]
                                [dims : (Refine [dims : Index]
