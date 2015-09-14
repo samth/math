@@ -1,5 +1,7 @@
 #lang typed/racket/base
 
+(require typed/safe/ops)
+
 (provide tangent-number)
 
 (: tangent-number : Integer -> Natural)
@@ -10,16 +12,18 @@
         [else
          ; Implementation note:
          ;   See "Concrete Mathematics" p 287 for the method
-         (define T : (Vectorof Natural) (build-vector (+ n 2) (lambda _ 0)))
+         ;; <refined-local> Refinement added to T for simple vector operations
+         (define T : (Refine [T : (Vectorof Natural)] (= (+ n 2) (len T))) (make-vector (+ n 2) 0))
          ; T[x]=x
-         (vector-set! T 1 1)
-         (for: ([k : Natural (in-range (+ n 1))])
+         (safe-vector-set! T 1 1)
+         ;; <refined-local> Refinements added to k & i.
+         (for: ([k : (Refine [k : Natural] (<= k n)) (in-range (+ n 1))])
            ; differentiate T[x]
-           (for: ([i : Natural (in-range (+ k 1))])
-             (vector-set! T i (* (add1 i) (vector-ref T (add1 i)))))
-           (vector-set! T k 0)
+           (for: ([i : (Refine [i : Natural] (<= i k)) (in-range (+ k 1))])
+             (safe-vector-set! T i (* (add1 i) (safe-vector-ref T (add1 i)))))
+           (safe-vector-set! T k 0)
            ; multiply T[x] with 1+x^2
            (for: ([i : Integer (in-range (+ k 1) 1 -1)])
-             (vector-set! T i (+ (vector-ref T i) (vector-ref T (- i 2))))))
-         (vector-ref T 0)]))
+             (vector-set! T i (+ (vector-ref T i) (vector-ref T (+ i 2))))))
+         (safe-vector-ref T 0)]))
 
