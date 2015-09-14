@@ -16,8 +16,10 @@
     [(= k 0) 1]
     [else
      (let ([m : Positive-Integer (max (+ k 1) (+ n 1))])
-       (define E (build-vector m (lambda ([i : Index]) : Integer 0)))
-       (vector-set! E 0 1) ; <0,0> = 1
+       ; <refined-local> Annotation added to E.
+       (define E : (Refine [E : (Vectorof Integer)] (= m (len E))) (make-vector m 0))
+       (safe-vector-set! E 0 1) ; <0,0> = 1
+       ; <nope> It should be possible to add refinements to i and j, but I am unsure how.
        (for: ([i : Positive-Integer (in-range 1 (+ n 1))])
          (for: ([j : Integer (in-range (- i 1) 0 -1)])
            (vector-set! E j (+ (* (+ j 1) (vector-ref E j))
