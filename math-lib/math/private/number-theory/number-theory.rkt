@@ -195,13 +195,15 @@
   (let ()
     ; TODO: Only store odd integers in this table
     (define N *VERY-SMALL-PRIME-LIMIT*)
-    (define ps (build-vector (+ N 1) (lambda _ #t)))
+    ; <refined-local> Annotation added to ps for safe vector operations.
+    (define ps : (Refine [ps : (Vectorof Boolean)] (= (+ N 1) (len ps))) (make-vector (+ N 1) #t))
     (safe-vector-set! ps 0 #f)
     (safe-vector-set! ps 1 #f)
-    (for ([n (in-range 2 (+ N 1))])
-      (when (vector-ref ps n)
-        (for ([m (in-range (+ n n) (+ N 1) n)])
-          (vector-set! ps m #f))))
+    ; <refined-local> Annotation added to n & m to confirm that it is in range of ps.
+    (for ([n : (Refine [n : Natural] (< n (+ N 1))) (in-range 2 (+ N 1))])
+      (when (safe-vector-ref ps n)
+        (for ([m : (Refine [m : Natural] (< m (+ N 1))) (in-range (+ n n) (+ N 1) n)])
+          (safe-vector-set! ps m #f))))
     (lambda (n)
       (let ([n (abs n)])
         (cond 
