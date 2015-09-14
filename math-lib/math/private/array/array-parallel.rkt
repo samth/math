@@ -12,7 +12,7 @@
 (provide parallel-array->mutable-array
          parallel-array-strict)
 
-; Refinement added to use safe-vector
+; <refined> Refinement added to use safe-vector
 (: safe-eval-array-proc! (All (A) (~> ([ds : Indexes]
                                        [proc : (Indexes -> A)]
                                        [js : (Refine [js : Indexes]
