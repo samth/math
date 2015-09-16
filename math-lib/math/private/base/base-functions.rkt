@@ -75,7 +75,7 @@
                  (Number -> Number)))
 (define (asinh x)
   (cond [(flonum? x)  (flasinh x)]
-        [(eqv? x 0)  0]
+        [(= x 0)  (error 'cond)]
         [(real? x)  (flasinh (fl x))]
         [(float-complex? x)  (log (+ x (sqrt (+ (* x x) 1.0))))]
         [else  (log (+ x (sqrt (+ (* x x) 1))))]))
@@ -87,7 +87,7 @@
                  (Number -> Number)))
 (define (acosh x)
   (cond [(flonum? x)  (flacosh x)]
-        [(eqv? x 1)  0]
+        [(= x 1)  (error 'cond)]
         [(and (real? x) (x . >= . 1))  (flacosh (fl x))]
         [(float-complex? x)  (log (+ x (* (sqrt (+ x 1.0)) (sqrt (- x 1.0)))))]
         [else  (log (+ x (* (sqrt (+ x 1)) (sqrt (- x 1)))))]))
@@ -99,7 +99,7 @@
                  (Number -> Number)))
 (define (atanh x)
   (cond [(flonum? x)  (flatanh x)]
-        [(eqv? x 0)  0]
+        [(= x 0)  (error 'cond)]
         [(real? x)  (flatanh (fl x))]
         [(float-complex? x)  (* 0.5 (- (log (+ 1.0 x)) (log (- 1.0 x))))]
         [else  (* 1/2 (- (log (+ 1 x)) (log (- 1 x))))]))
