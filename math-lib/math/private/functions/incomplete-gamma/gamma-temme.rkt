@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require "../../../flonum.rkt"
+(require typed/safe/ops
+         "../../../flonum.rkt"
          "../../../base.rkt"
          "../../unsafe.rkt"
          "../../distributions/impl/normal-cdf.rkt"
@@ -19,18 +20,20 @@
 
 (: build-fs (-> FlVector))
 (define (build-fs)
-  (define: start-fs : (Vectorof Real)  (vector 1 -1/3 1/12 -2/135))
-  (define: vec-fs : (Vectorof Real)  (make-vector num-fs 0))
+  (define start-fs : (Vectorof Real)  (vector 1 -1/3 1/12 -2/135))
+  (define vec-fs : (Refine [v : (Vectorof Real)] (= num-fs (len v))) (make-vector num-fs 0))
   (vector-copy! vec-fs 0 start-fs)
   ;; DP algorithm to compute f coefficients
-  (for ([m  (in-range 4 num-fs)])
-    (vector-set!
+  ; <refined-local> Added refinement to vec-fs, j, and m for safe-vector operations
+  (for ([m : (Refine [m : Positive-Integer] (< m num-fs)) (in-range 4 num-fs)])
+    (safe-vector-set!
      vec-fs m
      (* (- (/ (+ m 1) (+ m 2)))
-        (+ (* (/ (- m 1) (* 3 m)) (vector-ref vec-fs (- m 1)))
-           (for/fold: ([sum : Real  0]) ([j  (in-range 3 m)])
-             (+ sum (/ (* (vector-ref vec-fs (- j 1))
-                          (vector-ref vec-fs (+ m 1 (- j))))
+        (+ (* (/ (- m 1) (* 3 m)) (safe-vector-ref vec-fs (- m 1)))
+           (for/fold: ([sum : Real  0])
+                      ([j : (Refine [j : Positive-Integer] (< j m)) (in-range 3 m)])
+             (+ sum (/ (* (safe-vector-ref vec-fs (- j 1))
+                          (safe-vector-ref vec-fs (+ m 1 (- j))))
                        (+ m 2 (- j)))))))))
   (define new-fs (vector->flvector vec-fs))
   (set! fs new-fs)
