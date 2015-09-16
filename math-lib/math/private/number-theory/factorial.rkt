@@ -15,12 +15,12 @@
 (: fact-table (Vectorof Positive-Integer))
 (define fact-table
   (list->vector
-           (reverse
-            (foldl (λ: ([n  : Positive-Integer]
-                        [ns : (Listof Positive-Integer)])
-                     (cons (* n (car ns)) ns))
-                   '(1)
-                   (build-list (- fact-table-size 1) add1)))))
+   (reverse
+    (foldl (λ: ([n  : Positive-Integer]
+                [ns : (Listof Positive-Integer)])
+             (cons (* n (car ns)) ns))
+           '(1)
+           (build-list (- fact-table-size 1) add1)))))
 
 
 (: simple-cutoff Positive-Fixnum)
@@ -29,7 +29,7 @@
 
 (: factorial-simple (Nonnegative-Fixnum -> Positive-Integer))
 (define (factorial-simple n)
-  (cond [(n . < . (vector-length fact-table))  (safe-vector-ref fact-table n)]
+  (cond [(n . < . fact-table-size)  (vector-ref fact-table n)]
         [(< 0 n) (* n (factorial-simple (- n 1)))]
         [else 1]))
 
@@ -39,8 +39,8 @@
 (define (factorial n)
   (cond [(negative? n)  (raise-argument-error 'factorial "Natural" n)]
         [(not (fixnum? n))  (raise-argument-error 'factorial "Nonnegative-Fixnum" n)]
-        [(eqv? n 0)  1]
-        [(eqv? n 1)  1]
+        [(= n 0)  1]
+        [(= n 1)  n]
         [(n . < . simple-cutoff)  (factorial-simple n)]
         [else
          (let: loop : Positive-Integer ([n : Positive-Fixnum  n]
