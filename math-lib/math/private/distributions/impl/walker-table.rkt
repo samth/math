@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/list
+(require typed/safe/ops
+         racket/list
          "../../../flonum.rkt")
 
 (provide Walker-Table make-walker-table walker-table-sample)
@@ -48,7 +49,8 @@
   (define len (vector-length vec))
   (cond [(zero? len)  (raise-argument-error 'walker-table-sample "nonempty Walker-Table" vec)]
         [else
-         (define i (random len))
+         ; <nope> i is defined using random, unsure how to proceed.
+         (define i : Nonnegative-Fixnum (random len))
          (define xws (vector-ref vec i))
          (define rest-xws (rest xws))
          (cond [(empty? rest-xws)  (car (first xws))]

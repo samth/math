@@ -28,5 +28,5 @@
   (cond [(n . < . 0)  (raise-argument-error 'binomial "Natural" 0 n k)]
         [(k . < . 0)  (raise-argument-error 'binomial "Natural" 1 n k)]
         [(zero? k)  1]
-        [(eqv? n 1)  (if (eqv? k 1) 1 (binomial* n k))]
+        [(= n 1)  (if (= k 1) 1 (binomial* n k))]
         [else  (binomial* n k)]))

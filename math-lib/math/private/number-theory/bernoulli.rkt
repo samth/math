@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require "../vector/vector.rkt"
+(require typed/safe/ops
+         "../vector/vector.rkt"
          "types.rkt"
          "factorial.rkt"
          "binomial.rkt")
@@ -10,7 +11,8 @@
 ;; Number of globally memoized Bernoulli numbers
 (define num-global-bs 200)
 ;; Globally memoized numbers
-(: global-bs (Vectorof Exact-Rational))
+(: global-bs (Refine [g : (Vectorof Exact-Rational)]
+                     (= num-global-bs (len g))))
 (define global-bs (make-vector num-global-bs 0))
 (vector-set! global-bs 0 1)
 (vector-set! global-bs 1 -1/2)

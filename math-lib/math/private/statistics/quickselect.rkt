@@ -18,6 +18,8 @@ otherwise
 
 (: partition! (All (A) ((Vectorof A) Fixnum Fixnum (A A -> Any) -> Fixnum)))
 (define (partition! vs start end lt?)
+  ; <nope> p defined using random. Cannot be sure that vector accesses using
+  ; p are safe unless we add refinements for both start and end.
   (define p (+ start (random (unsafe-fx- (unsafe-fx+ end 1) start))))
   (define pivot (unsafe-vector-ref vs p))
   (unsafe-vector-set! vs p (unsafe-vector-ref vs end))
