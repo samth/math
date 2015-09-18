@@ -36,7 +36,7 @@
   (let* ([xs  (list->vector xs)]
          [ws  (weights->normalized-weights name ws)]
          [ws  (flvector-sums (list->flvector ws))])
-    (define n (vector-length xs))
+    (define n : (Refine [n : Index] (= n (len xs))) (vector-length xs))
     
     (: find-new-endpoint (Index Index -> (Option Index)))
     ;; Returns the next index after i1 for which the sum of weights >= α
@@ -50,6 +50,8 @@
     
     (define i1 (find-new-endpoint 0 0))
     (cond
+      ; <nope> We have no indication that xs is non-empty. Unless we
+      ;  are sure that this is ALWAYS the case, we cannot proceed.
       [(not i1)  (values (vector-ref xs 0) (vector-ref xs (- n 1)))]
       [else
        (define a* (vector-ref xs 0))
