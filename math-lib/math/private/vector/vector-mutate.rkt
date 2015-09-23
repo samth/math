@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/fixnum
+(require typed/safe/ops
+         racket/fixnum
          math/base
          math/private/unsafe)
 
@@ -21,6 +22,20 @@
   (cond [(real? x)  (sqr x)]
         [else  (abs (real-part (* x (conjugate x))))]))
 
+;; <refined> Safe version of vector-swap!
+(: safe-vector-swap! (All (A)
+                  (~> ([vec : (Vectorof A)]
+                       [i0 : (Refine [i0 : Integer]
+                             (< -1 i0 (len vec)))]
+                       [i1 : (Refine [i1 : Integer]
+                             (< -1 i1 (len vec)))])
+                      Void)))
+(define (safe-vector-swap! vs i0 i1)
+  (unless (= i0 i1)
+    (define tmp (safe-vector-ref vs i0))
+    (safe-vector-set! vs i0 (safe-vector-ref vs i1))
+    (safe-vector-set! vs i1 tmp)))
+
 (: vector-swap! (All (A) ((Vectorof A) Integer Integer -> Void)))
 (define (vector-swap! vs i0 i1)
   (unless (= i0 i1)
@@ -34,7 +49,7 @@
          [n   (vector-length vs)])
     (let loop ([#{i : Nonnegative-Fixnum} 0])
       (if (i . fx< . n)
-          (begin (unsafe-vector-set! vs i (* v (unsafe-vector-ref vs i)))
+          (begin (safe-vector-set! vs i (* v (safe-vector-ref vs i)))
                  (loop (fx+ i 1)))
           (void)))))
 
@@ -45,6 +60,7 @@
 (define (vector-scale! vs v)
   (vector-generic-scale! vs v *))
 
+;; <nope> We would need to recognize min and fixnum arithmetic to do safe vector accesses.
 (define-syntax-rule (vector-generic-scaled-add! vs0-expr vs1-expr v-expr start-expr + *)
   (let* ([vs0  vs0-expr]
          [vs1  vs1-expr]
@@ -77,11 +93,12 @@
   (define n (vector-length vs))
   (cond [(fx= n 0)  (raise-argument-error 'vector-mag^2 "nonempty Vector" vs)]
         [else
-         (define s (mag^2 (unsafe-vector-ref vs 0)))
+         (define s (mag^2 (safe-vector-ref vs 0)))
          (let: loop ([i : Nonnegative-Fixnum  1] [s s])
-           (cond [(i . fx< . n)  (loop (fx+ i 1) (+ s (mag^2 (unsafe-vector-ref vs i))))]
+           (cond [(i . fx< . n)  (loop (fx+ i 1) (+ s (mag^2 (safe-vector-ref vs i))))]
                  [else  (abs s)]))]))
 
+;; <nope> Requires the min type to be stronger for safe vector operations.
 (: vector-dot (case-> ((Vectorof Flonum) (Vectorof Flonum) -> Flonum)
                       ((Vectorof Real) (Vectorof Real) -> Real)
                       ((Vectorof Float-Complex) (Vectorof Float-Complex) -> Float-Complex)
@@ -109,7 +126,7 @@
   (unless (and (zero? s) (exact? s))
     (let loop ([#{i : Nonnegative-Fixnum} 0])
       (when (i . fx< . n)
-        (unsafe-vector-set! vs i (/ (unsafe-vector-ref vs i) s))
+        (safe-vector-set! vs i (/ (safe-vector-ref vs i) s))
         (loop (fx+ i 1)))))
   s)
 
@@ -123,6 +140,8 @@
         [(float-complex? x)  1.0]
         [else  1]))
 
+;; <nope> Requires min function as follows for safe vector operation:
+;; (if (define n (min x y)) then (<= n x) & (<= n y)
 (: vector-sub-proj!
    (case-> ((Vectorof Flonum) (Vectorof Flonum) Any -> Nonnegative-Flonum)
            ((Vectorof Real) (Vectorof Real) Any -> Nonnegative-Real)
@@ -151,7 +170,7 @@
   (define n (vector-length vs))
   (let loop ([#{i : Nonnegative-Fixnum} 0])
     (when (i . fx< . n)
-      (define x (unsafe-vector-ref vs i))
+      (define x (safe-vector-ref vs i))
       (unsafe-vector-set! vs i (- x x))
       (loop (fx+ i 1)))))
 
@@ -163,6 +182,6 @@
   (define n (vector-length vs))
   (let loop ([#{i : Nonnegative-Fixnum} 0])
     (cond [(i . fx>= . n)  #t]
-          [(zero? (unsafe-vector-ref vs i))
+          [(zero? (safe-vector-ref vs i))
            (loop (fx+ i 1))]
           [else  #f])))

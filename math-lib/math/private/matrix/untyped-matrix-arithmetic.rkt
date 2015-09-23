@@ -9,7 +9,8 @@
          matrix-map)
 
 (module typed-multiply-defs typed/racket/base
-  (require racket/fixnum
+  (require typed/safe/ops
+           racket/fixnum
            "matrix-types.rkt"
            "utils.rkt"
            "../unsafe.rkt"
@@ -19,10 +20,12 @@
            "../array/utils.rkt")
   
   (provide (all-defined-out))
-  
-  (: matrix-multiply-data (All (A) ((Matrix A) (Matrix A) -> (Values Index Index Index
-                                                                     (Vectorof A) (Vectorof A)
-                                                                     (-> (Boxof A))))))
+
+  ;; <nope> Unsure how to make this function safe.
+  (: matrix-multiply-data (All (A) ((Matrix A) (Matrix A) ->
+                                               (Values Index Index Index
+                                                       (Vectorof A) (Vectorof A)
+                                                       (-> (Boxof A))))))
   (define (matrix-multiply-data arr brr)
     (let-values ([(m p n)  (matrix-multiply-shape arr brr)])
       (define arr-data (mutable-array-data (array->mutable-array arr)))
@@ -30,7 +33,8 @@
                                                                    (array-axis-swap brr 0 1)))))
       (define bx (make-thread-local-box (unsafe-vector-ref arr-data 0)))
       (values m p n arr-data brr-data bx)))
-  
+
+  ;; <nope> Requires a change in the type of unsafe-build-array
   (: make-matrix-multiply (All (A) (Index Index Index (Index Index -> A) -> (Matrix A))))
   (define (make-matrix-multiply m p n sum-loop)
     (array-default-strict

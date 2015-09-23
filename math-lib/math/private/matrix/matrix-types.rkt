@@ -55,6 +55,9 @@
               (safe-vector-ref ds 1))
       (raise-argument-error 'matrix-shape "matrix?" a)))
 
+;; <nope> All three of the following functions would require us to reason about
+;; the shape of the input array rather than the array itself for
+;; safe vector operations.
 (: square-matrix-size (All (A) ((Array A) -> Index)))
 (define (square-matrix-size arr)
   (cond [(square-matrix? arr)  (unsafe-vector-ref (array-shape arr) 0)]

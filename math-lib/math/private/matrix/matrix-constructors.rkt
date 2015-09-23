@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/fixnum
+(require typed/safe/ops
+         racket/fixnum
          racket/flonum
          racket/list
          racket/vector
@@ -37,6 +38,7 @@
 (define (make-matrix m n x)
   (make-array (vector m n) x))
 
+;; <nope> requires change in the type of unsafe-build-array
 (: build-matrix (All (A) (Integer Integer (Index Index -> A) -> (Matrix A))))
 (define (build-matrix m n proc)
   (cond [(or (not (index? m)) (= m 0))
@@ -54,6 +56,7 @@
 ;; ===================================================================================================
 ;; Diagonal matrices
 
+;; <nope> requires change in the type of unsafe-build-simple-array
 (: diagonal-matrix/zero (All (A) ((Listof A) A -> (Matrix A))))
 (define (diagonal-matrix/zero xs zero)
   (cond [(empty? xs)
@@ -100,6 +103,7 @@
                 ) ([m  (in-list ms)]
                    [n  (in-list ns)]
                    [k : Nonnegative-Fixnum  (in-range num)])
+      ;; <nope> requires info about unsafe-fx+
       (let ([k  (assert k index?)])
         (for: ([i : Nonnegative-Fixnum  (in-range m)])
           (vector-set! vs (unsafe-fx+ res-i i) k)
@@ -110,6 +114,7 @@
       (values (unsafe-fx+ res-i m) (unsafe-fx+ res-j n))))
   (define procs (vector-map (λ: ([a : (Matrix A)]) (unsafe-array-proc a)) as))
   (array-default-strict
+   ;; <nope> requires type change to unsafe-build-array
    (unsafe-build-array
     ((inst vector Index) res-m res-n)
     (λ: ([ij : Indexes])
@@ -136,7 +141,7 @@
     (cond [(= num 0)
            (raise-argument-error 'block-diagonal-matrix/zero "nonempty List" as)]
           [(= num 1)
-           (unsafe-vector-ref as 0)]
+           (safe-vector-ref as 0)]
           [else
            (block-diagonal-matrix/zero* as zero)])))
 

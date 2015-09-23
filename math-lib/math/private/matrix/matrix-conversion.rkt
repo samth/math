@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/fixnum
+(require typed/safe/ops
+         racket/fixnum
          racket/list
          racket/vector
          "matrix-types.rkt"
@@ -72,10 +73,12 @@
 (define (find-nontrivial-axis ds)
   (define dims (vector-length ds))
   (let: loop : (Values Index Index) ([k : Nonnegative-Fixnum  0])
-    (cond [(k . < . dims)  (define dk (unsafe-vector-ref ds k))
+    (cond [(k . < . dims)  (define dk (safe-vector-ref ds k))
                            (if (dk . > . 1) (values k dk) (loop (fx+ k 1)))]
           [else  (values 0 0)])))
 
+;; <nope> vector-ref requires change to unsafe-build-array for safe ops.
+;; vector-set! requires jumping through hoops with regard to the type of js.
 (: array->col-matrix (All (A) ((Array A) -> (Matrix A))))
 (define (array->col-matrix arr)
   (define (fail)
@@ -136,11 +139,11 @@
   (define m (vector-length xss))
   (cond [(m . > . 0)
          (define ns ((inst vector-map Index (Vectorof A)) vector-length xss))
-         (define n (vector-length (unsafe-vector-ref xss 0)))
+         (define n (vector-length (safe-vector-ref xss 0)))
          (cond [(and (n . > . 0)
                      (let: loop : Boolean ([i : Nonnegative-Fixnum  1])
                        (cond [(i . fx< . m)
-                              (if (= n (vector-length (unsafe-vector-ref xss i)))
+                              (if (= n (vector-length (safe-vector-ref xss i)))
                                   (loop (fx+ i 1))
                                   #f)]
                              [else  #t])))

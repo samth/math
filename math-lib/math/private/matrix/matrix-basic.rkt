@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/list
+(require typed/safe/ops
+         racket/list
          racket/fixnum
          math/flonum
          math/base
@@ -75,6 +76,7 @@
 (define (submatrix a row-range col-range)
   (array-slice-ref (ensure-matrix 'submatrix a) (list row-range col-range)))
 
+;; <nope> requires change to the type of unsafe-build-array
 (: matrix-row (All (A) (Matrix A) Integer -> (Matrix A)))
 (define (matrix-row a i)
   (define-values (m n) (matrix-shape a))
@@ -91,6 +93,7 @@
              (unsafe-vector-set! ij 0 0)
              res)))]))
 
+;; <nope> requires change to the type of unsafe-build-array
 (: matrix-col (All (A) (Matrix A) Integer -> (Matrix A)))
 (define (matrix-col a j)
   (define-values (m n) (matrix-shape a))
@@ -119,6 +122,7 @@
        (parameterize ([array-strictness #f])
          (array->array-list (array-axis-insert (ensure-matrix 'matrix-cols a) 2) 1))))
 
+;; <nope> requires change to type of unsafe-build-array
 (: matrix-diagonal (All (A) ((Matrix A) -> (Array A))))
 (define (matrix-diagonal a)
   (define-values (m n) (matrix-shape a))
@@ -130,6 +134,7 @@
       (define i (unsafe-vector-ref js 0))
       (proc ((inst vector Index) i i))))))
 
+;; <nope> requires change to type of unsafe-build-array
 (: matrix-upper-triangle (All (A) (case-> ((Matrix A) -> (Matrix (U A 0)))
                                           ((Matrix A) A -> (Matrix A)))))
 (define matrix-upper-triangle
@@ -146,6 +151,7 @@
          (define j (unsafe-vector-ref ij 1))
          (if (i . fx<= . j) (proc ij) zero))))]))
 
+;; <nope> requires change to type of unsafe-build-array
 (: matrix-lower-triangle (All (A) (case-> ((Matrix A) -> (Matrix (U A 0)))
                                           ((Matrix A) A -> (Matrix A)))))
 (define matrix-lower-triangle
