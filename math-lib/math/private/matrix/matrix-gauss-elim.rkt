@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/fixnum
+(require typed/safe/ops
+         racket/fixnum
          racket/list
          "matrix-types.rkt"
          "matrix-conversion.rkt"
@@ -34,6 +35,7 @@
            ((Matrix Number) Any Any Pivoting -> (Values (Matrix Number) (Listof Index)))))
 (define (matrix-gauss-elim M [jordan? #f] [unitize-pivot? #f] [pivoting 'partial])
   (define-values (m n) (matrix-shape M))
+  ;; <nope> Adding a local refinement to rows creates an impressive 68 errors.
   (define rows (matrix->vector* M))
   (let loop ([#{i : Nonnegative-Fixnum} 0]
              [#{j : Nonnegative-Fixnum} 0]

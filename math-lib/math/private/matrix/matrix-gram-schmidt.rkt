@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/fixnum
+(require typed/safe/ops
+         racket/fixnum
          racket/list
          "matrix-types.rkt"
          "matrix-basic.rkt"
@@ -25,9 +26,32 @@
   (cond [(= n 0)  #f]
         [else  (let loop ([#{i : Nonnegative-Fixnum} 0])
                  (cond [(i . fx< . n)
-                        (define vs (unsafe-vector-ref vss i))
+                        (define vs (safe-vector-ref vss i))
                         (if (vector-zero? vs) (loop (fx+ i 1)) i)]
                        [else  #f]))]))
+
+(: safe-subtract-projections!
+   (case-> (~> ([rows : (Vectorof (Vectorof Flonum))]
+                [i : Nonnegative-Fixnum]
+                [m : (Refine [m : Index] (= m (len rows)))]
+                [row : (Vectorof Flonum)]) Void)
+           (~> ([rows : (Vectorof (Vectorof Real))]
+                [i : Nonnegative-Fixnum]
+                [m : (Refine [m : Index] (= m (len rows)))]
+                [row : (Vectorof Real)]) Void)
+           (~> ([rows : (Vectorof (Vectorof Float-Complex))]
+                [i : Nonnegative-Fixnum]
+                [m : (Refine [m : Index] (= m (len rows)))]
+                [row : (Vectorof Float-Complex)]) Void)
+           (~> ([rows : (Vectorof (Vectorof Number))]
+                [i : Nonnegative-Fixnum]
+                [m : (Refine [m : Index] (= m (len rows)))]
+                [row : (Vectorof Number)]) Void)))
+(define (safe-subtract-projections! rows i m row)
+  (let loop ([#{i : Nonnegative-Fixnum} i])
+    (when (i . fx< . m)
+      (vector-sub-proj! (safe-vector-ref rows i) row #f)
+      (loop (fx+ i 1)))))
 
 (: subtract-projections!
    (case-> ((Vectorof (Vectorof Flonum)) Nonnegative-Fixnum Index (Vectorof Flonum) -> Void)
@@ -49,7 +73,7 @@
 ;; orthogonal
 (define (matrix-gram-schmidt/ns M normalize? start)
   (define rows (matrix->vector* (matrix-transpose M)))
-  (define m (vector-length rows))
+  (define m : (Refine [m : Index] (= m (len rows))) (vector-length rows))
   (define i (find-nonzero-vector rows))
   (cond [(not (index? start))
          (raise-argument-error 'matrix-gram-schmidt "Index" 2 M normalize? start)]
@@ -59,7 +83,7 @@
          (when normalize? (vector-normalize! rowi))
          (let loop ([#{i : Nonnegative-Fixnum} (fx+ i 1)] [bs (list rowi)])
            (cond [(i . fx< . m)
-                  (define rowi (unsafe-vector-ref rows i))
+                  (define rowi (safe-vector-ref rows i))
                   (cond [(vector-zero? rowi)  (loop (fx+ i 1) bs)]
                         [else  (subtract-projections! rows (fxmax start (fx+ i 1)) m rowi)
                                (when normalize? (vector-normalize! rowi))
