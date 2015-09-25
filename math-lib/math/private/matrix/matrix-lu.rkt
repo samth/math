@@ -26,12 +26,14 @@
                                                               (Matrix Float-Complex)))
                     ((Matrix Number)        -> (Values (Matrix Number) (Matrix Number)))
                     ((Matrix Number) (-> A) -> (Values (U A (Matrix Number)) (Matrix Number))))))
+;; <nope> Other than the note below, it isn't clear how
+;; the references for the vector operations are safe
 (define matrix-lu
   (case-lambda
     [(M)  (matrix-lu M (λ () (raise-argument-error 'matrix-lu "LU-decomposable matrix" M)))]
     [(M fail)
-     (define m (square-matrix-size M))
      (define rows (matrix->vector* M))
+     (define m (square-matrix-size M))
      (define L
        (parameterize ([array-strictness #f])
          ;; Construct L in a weird way to prove to TR that it has the right type
@@ -56,6 +58,8 @@
                     ;; Fill in lower triangle of L
                     (unsafe-vector-set! ys (+ (* l m) i) y_li)
                     ;; Add row i, scaled
+              ;; <nope> these two safe-vector-refs require guarantees about the type of min relation to rows, which
+              ;; requires matrix->vector* and square-matrix-size to give information about their type, like length.
                     (vector-scaled-add! (unsafe-vector-ref rows l)
                                         (unsafe-vector-ref rows i)
                                         (* -1 y_li)))

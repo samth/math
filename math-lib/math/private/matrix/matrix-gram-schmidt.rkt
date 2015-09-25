@@ -50,7 +50,7 @@
 (define (safe-subtract-projections! rows i m row)
   (let loop ([#{i : Nonnegative-Fixnum} i])
     (when (i . fx< . m)
-      (vector-sub-proj! (safe-vector-ref rows i) row #f)
+      (vector-sub-proj! (unsafe-vector-ref rows i) row #f)
       (loop (fx+ i 1)))))
 
 (: subtract-projections!
@@ -79,7 +79,7 @@
          (raise-argument-error 'matrix-gram-schmidt "Index" 2 M normalize? start)]
         [i
          (define rowi (unsafe-vector-ref rows i))
-         (subtract-projections! rows (fxmax start (fx+ i 1)) m rowi)
+         (safe-subtract-projections! rows (fxmax start (fx+ i 1)) m rowi)
          (when normalize? (vector-normalize! rowi))
          (let loop ([#{i : Nonnegative-Fixnum} (fx+ i 1)] [bs (list rowi)])
            (cond [(i . fx< . m)
