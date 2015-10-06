@@ -259,6 +259,7 @@
   (case dims
     [(0)  arr]
     [(1)  (define g (unsafe-array-proc arr))
+          ; <nope> Vector accesses for js require a change to the input type of unsafe-build-array
           (unsafe-build-array
            new-ds
            (λ: ([js : Indexes])
@@ -268,6 +269,7 @@
              (unsafe-vector-set! js 0 j0)
              v))]
     [(2)  (define g (unsafe-array-proc arr))
+          ; <nope> Vector accesses for js require a change to the input type of unsafe-build-array
           (unsafe-build-array
            new-ds
            (λ: ([js : Indexes])
@@ -287,6 +289,7 @@
         (let ([old-js  (old-js)])
           (let: loop : Indexes ([i : Nonnegative-Fixnum  0])
             (cond [(i . < . dims)
+                   ; <nope> Vector-ref of new-js requires change to input type of unsafe-array-transform
                    (define new-ji (unsafe-vector-ref new-js i))
                    (define old-ji (unsafe-vector-ref (unsafe-vector-ref old-jss i) new-ji))
                    (unsafe-vector-set! old-js i old-ji)

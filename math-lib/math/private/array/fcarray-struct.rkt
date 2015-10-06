@@ -37,6 +37,7 @@
   (: unsafe-vector->fcarray (Indexes (Vectorof Number) -> FCArray))
   (define (unsafe-vector->fcarray ds zs)
     (define size (vector-length zs))
+    ; <nope> Vector accesses using j require a change to build-fl-vector
     (define xs (build-flvector size (λ: ([j : Index]) (fl (real-part (unsafe-vector-ref zs j))))))
     (define ys (build-flvector size (λ: ([j : Index]) (fl (imag-part (unsafe-vector-ref zs j))))))
     (unsafe-fcarray ds xs ys))

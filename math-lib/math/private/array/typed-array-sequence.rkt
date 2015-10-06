@@ -102,6 +102,7 @@
            (define dk (vector-length arrs))
            (define new-ds (unsafe-vector-insert ds k dk))
            (array-default-strict
+            ; <nope> Vector accesses into js require change to the input type of unsafe-build-array
             (unsafe-build-array
              new-ds (λ: ([js : Indexes])
                       (define jk (unsafe-vector-ref js k))

@@ -19,6 +19,7 @@
 
 (: unsafe-vector->array (All (A) (Indexes (Vectorof A) -> (Mutable-Array A))))
 (define (unsafe-vector->array ds vs)
+  ; <nope> Vector accesses at j require a change to the input type of make-unsafe-array-proc
   (define proc (make-unsafe-array-proc ds (λ (j) (unsafe-vector-ref vs j))))
   (define set-proc (make-unsafe-array-set-proc A ds (λ (j v) (unsafe-vector-set! vs j v))))
   (Mutable-Array ds (vector-length vs) (box #t) void proc set-proc vs))

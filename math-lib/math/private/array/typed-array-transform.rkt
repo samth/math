@@ -58,6 +58,7 @@
          (raise-argument-error 'array-transpose (format "Index < ~a" dims) 2 arr i0 i1)]
         [(= i0 i1)  arr]
         [else
+         ; <nope> Cannot refine the type of new-ds because vector-copy-all does not carry around the length
          (define new-ds (vector-copy-all ds))
          (define j0 (unsafe-vector-ref new-ds i0))
          (define j1 (unsafe-vector-ref new-ds i1))
@@ -65,6 +66,7 @@
          (unsafe-vector-set! new-ds i1 j0)
          (define proc (unsafe-array-proc arr))
          (array-default-strict
+          ; <nope> All js accesses require a change to the input type of unsafe-build-array
           (unsafe-build-array
            new-ds (λ: ([js : Indexes])
                     (define j0 (unsafe-vector-ref js i0))
@@ -204,6 +206,7 @@
                                   (i-loop (+ i 1) (unsafe-fx+ jk 1))]
                    [else  (arrs-loop (cdr arrs) (cdr dks) jk)]))))
        (array-default-strict
+        ; <nope> All js accesses require a change to the input type of unsafe-build-array
         (unsafe-build-array
          new-ds (λ: ([js : Indexes])
                   (define jk (unsafe-vector-ref js k))

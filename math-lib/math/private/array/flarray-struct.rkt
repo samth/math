@@ -31,6 +31,7 @@
   (define (unsafe-vector->flarray ds vs)
     (define size (vector-length vs))
     (define xs
+      ; <nope> Requires change to input type of build-flvector
       (build-flvector size (λ: ([j : Index]) (real->double-flonum (unsafe-vector-ref vs j)))))
     (unsafe-flarray ds xs))
   
