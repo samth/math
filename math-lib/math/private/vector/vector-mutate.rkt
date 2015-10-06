@@ -171,7 +171,7 @@
   (let loop ([#{i : Nonnegative-Fixnum} 0])
     (when (i . fx< . n)
       (define x (safe-vector-ref vs i))
-      (unsafe-vector-set! vs i (- x x))
+      (safe-vector-set! vs i (- x x))
       (loop (fx+ i 1)))))
 
 (: vector-zero? (case-> ((Vectorof Flonum) -> Boolean)
