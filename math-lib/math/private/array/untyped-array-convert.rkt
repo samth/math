@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/unsafe/ops
+(require typed/safe/ops
+         racket/unsafe/ops
          typed/racket/base
          "array-struct.rkt"
          "mutable-array.rkt"
@@ -27,11 +28,11 @@
                 (define d (vector-length vec))
                 (cond [(= d 0)  (list 0)]
                       [else
-                       (define ds (vector-shape (vector-ref vec 0)))
+                       (define ds (vector-shape (safe-vector-ref vec 0)))
                        (if ds
                            (let: loop : (U #f (Listof Integer)) ([i : Nonnegative-Fixnum 1])
                              (cond [(i . >= . d)  (cons d ds)]
-                                   [(equal? ds (vector-shape (vector-ref vec i)))
+                                   [(equal? ds (vector-shape (safe-vector-ref vec i)))
                                     (loop (+ i 1))]
                                    [else  #f]))
                            #f)])]))))
@@ -101,6 +102,7 @@
             [ds  (let ([ds  (check-array-shape ds raise-shape-error)])
                    (define dims (vector-length ds))
                    (array->mutable-array
+                    ; <nope> We need to be able to change the input type of unsafe-build-array.
                     (unsafe-build-array
                      ds (λ: ([js : Indexes])
                           (let: loop : A ([i : Nonnegative-Fixnum  0] [vec : (Vectorof* A)  vec])
