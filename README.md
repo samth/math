@@ -6,6 +6,8 @@
 
 ; \<nope> = Cannot get to work (comment for details) 
 
+; \<not-safe> = latent bug found by our inability to typecheck it
+
 ; \<refined> = Works if refinement types are added, but may cause side-effects throughout library
 
 ; \<refined-local> = Works with local refinement types added.
