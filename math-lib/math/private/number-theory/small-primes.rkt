@@ -15,6 +15,8 @@
 ; Note that there are exactly 16 of these moduli, so they fit in a u16.
 ; That is, a single u16 can represent a block of 60 numbers.
 
+; <nope> Need to be able to talk about the Positive-Bytes in non-235
+; but run out of memory when we attempt to add refinements.
 (: mod60->bits (Vectorof (U #f Byte)))
 (define mod60->bits (make-vector 60 #f))
 (for ([x : Positive-Byte (in-list non-235)]

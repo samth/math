@@ -1,6 +1,7 @@
 #lang typed/racket/base
 (provide partitions set-partitions-cache)
-(require math/private/number-theory/types
+(require typed/safe/ops
+         math/private/number-theory/types
          (only-in racket/vector vector-copy))
 
 ;; The number of partitions of 4 is 5, since the number 4 can 
@@ -19,6 +20,9 @@
 ;; avoid unnecessary computations.
 
 ; partitions store previously computed values in cache.
+
+; <nope> cache is a vector built out of a mutated variable.
+; As such, we do not have guarantees about it's size.
 (: cache-size : Nonnegative-Integer)
 (define cache-size 128)
 (: cache (Vectorof Integer))
@@ -70,6 +74,8 @@
         [else (double-cache (+ n 1))
               (p n)]))
 
+; <nope> cache is a vector built out of a mutated variable.
+; As such, we do not have guarantees about it's size.
 (: p : Natural -> Integer)
 ; compute the number of partitions of n using Euler's algorithm
 (define (p n)

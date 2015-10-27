@@ -27,9 +27,10 @@
 ;; The point at which it seems to be faster to use a more complicated recurrence
 (define simple-cutoff 244)
 
+; <nope> fact-table does not have information about its length in relation to fact-table-size
 (: factorial-simple (Nonnegative-Fixnum -> Positive-Integer))
 (define (factorial-simple n)
-  (cond [(n . < . fact-table-size)  (vector-ref fact-table n)]
+  (cond [(n . < . fact-table-size) (vector-ref fact-table n)]
         [(< 0 n) (* n (factorial-simple (- n 1)))]
         [else 1]))
 

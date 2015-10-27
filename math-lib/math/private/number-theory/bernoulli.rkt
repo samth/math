@@ -14,6 +14,7 @@
 (: global-bs (Refine [g : (Vectorof Exact-Rational)]
                      (= num-global-bs (len g))))
 (define global-bs (make-vector num-global-bs 0))
+; <nope> I do not know why this cannot be safe-vector-set!
 (vector-set! global-bs 0 1)
 (vector-set! global-bs 1 -1/2)
 

@@ -42,6 +42,7 @@ negative.
 (define-values (expm1-neg-650-hi expm1-neg-650-lo)
   (values -1.0 5.111951948651156e-283))
 
+; <nope> We cannot reason about the flonum floor function.
 (: flexpm1-reduction (Flonum -> (Values Flonum Flonum Flonum)))
 (define (flexpm1-reduction x)
   (cond [(x . fl> . expm1-max)  (values x 0.0 0.0)]
