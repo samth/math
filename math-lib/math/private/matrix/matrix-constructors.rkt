@@ -126,7 +126,7 @@
              (define iv (unsafe-vector-ref is i))
              (define jv (unsafe-vector-ref js j))
              (unsafe-vector-set! ij 0 iv)
-             (unsafe-vector-set! ij 1 jv)repeat
+             (unsafe-vector-set! ij 1 jv)
              (define res (proc ij))
              (unsafe-vector-set! ij 0 i)
              (unsafe-vector-set! ij 1 j)

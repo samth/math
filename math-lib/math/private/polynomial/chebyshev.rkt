@@ -74,15 +74,16 @@
          (define y (num/ (num- (num* x 2.num) (num+ mn mx))
                          (num- mx mn)))
          (define y2 (num* y 2.num))
-         (let: loop : A ([i : Nonnegative-Fixnum  i]
+         ; <refined-local> Refinement added, which requires a variable change because of shadowing.
+         (let loop : A ([j : (Refine [j : Nonnegative-Fixnum] (<= j i))  i]
                          [c : A  c]
                          [d : A  0.num]
                          [dd : A  0.num])
-           (cond [(zero? i)  (num+ (num* y d) (num- (num/ c 2.num) dd))]
+           (cond [(zero? j)  (num+ (num* y d) (num- (num/ c 2.num) dd))]
                  [else
                   (let ([d   (num+ (num* y2 d) (num- c dd))]
                         [dd  d])
-                    (loop (- i 1) (unsafe-vector-ref cs (- i 1)) d dd))])))])))
+                    (loop (- j 1) (safe-vector-ref cs (- j 1)) d dd))])))])))
 
 (define build-chebyshev-poly
   (make-build-chebyshev-poly Real + - * / cos (λ (x) x) (λ () pi)))

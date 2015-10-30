@@ -58,6 +58,8 @@
   (provide (all-defined-out))
   
   ;; This is a macro so the result can have as precise a type as possible
+  ; <nope> requires us to have information about matrix-multiply-data, and
+  ; I am unaware how to make that function safe.
   (define-syntax-rule (inline-matrix-multiply arr brr)
     (let-values ([(m p n arr-data brr-data bx)  (matrix-multiply-data arr brr)])
       (make-matrix-multiply

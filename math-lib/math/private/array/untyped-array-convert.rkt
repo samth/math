@@ -65,14 +65,14 @@
                 [else  (for ([lst  (in-list lst)])
                          (loop lst))
                        (error 'first* "no first* element")]))))
-    
+    ; <refined-local> annotations added to vec and i for safe vector access.
     (: list*->flat-vector (All (A) ((Listof* A) Integer ((Listof* A) -> Any : A) -> (Vectorof A))))
     (define (list*->flat-vector lst size pred?)
       (cond [(zero? size)  (vector)]
             [else
-             (define vec (make-vector size (first* lst pred?)))
-             (let: loop : Fixnum ([lst : (Listof* A)  lst] [i : Fixnum  0])
-               (cond [(pred? lst)  (unsafe-vector-set! vec i lst)
+             (define vec : (Refine [vec: (Vectorof A)] (= size (len vec))) (make-vector size (first* lst pred?)))
+             (let: loop : Fixnum ([lst : (Listof* A)  lst] [i : (Refine [i : Fixnum] (< i size))  0])
+               (cond [(pred? lst)  (safe-vector-set! vec i lst)
                                    (unsafe-fx+ i 1)]
                      [else  (for/fold: ([i : Fixnum  i]) ([lst  (in-list lst)])
                               (loop lst i))]))

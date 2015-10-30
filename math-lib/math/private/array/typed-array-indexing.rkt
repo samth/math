@@ -181,9 +181,9 @@
   (define dims (vector-length ds))
   (define-values (new-arr old-jss)
     (for/fold: ([arr : (Array A)  arr]
-                [jss : (Listof (Vectorof Index))  null]
-                ) ([s  (in-list (reverse slices))]
-                   [k  (in-range (- dims 1) -1 -1)])
+                [jss : (Listof (Vectorof Index))  null])
+               ([s  (in-list (reverse slices))]
+                [k  (in-range (- dims 1) -1 -1)])
       (define dk (unsafe-vector-ref ds k))
       (cond [(integer? s)
              (when (or (s . < . 0) (s . >= . dk))
@@ -291,7 +291,63 @@
             (cond [(i . < . dims)
                    ; <nope> Vector-ref of new-js requires change to input type of unsafe-array-transform
                    (define new-ji (unsafe-vector-ref new-js i))
+                   ; <nope> Vector ref of old-jss requires us to know that new-ds and old-jss have the same length.
+                   ; I believe this is the case, but we cannot annotate new-ds to say this without changing the type
+                   ; of vector-map.
                    (define old-ji (unsafe-vector-ref (unsafe-vector-ref old-jss i) new-ji))
                    (unsafe-vector-set! old-js i old-ji)
                    (loop (+ i 1))]
                   [else  old-js])))))]))
+
+(: safe-array-axis-transform (All (A) (~> ([arr : (Array A)]
+                                           [outer : (Refine [outer : (Vectorof (Vectorof Index))] (< 1 (len outer)))])
+                                          (Array A))))
+(define (safe-array-axis-transform arr old-jss)
+  (define new-ds : Indexes (vector-map vector-length old-jss))
+  (define dims (vector-length new-ds))
+  (case dims
+    [(0)  arr]
+    [(1)  (define g (unsafe-array-proc arr))
+          ; <nope> Vector accesses for js require a change to the input type of unsafe-build-array
+          ; <nope> Therefore cannot do vector accesses with regard to j0 because it relies on an access into js.
+          (unsafe-build-array
+           new-ds
+           (λ: ([js : Indexes])
+             (define j0 (unsafe-vector-ref js 0))
+             ; <refined> Refinement added for safety.
+             (unsafe-vector-set! js 0 (unsafe-vector-ref (safe-vector-ref old-jss 0) j0))
+             (define v (g js))
+             (unsafe-vector-set! js 0 j0)
+             v))]
+    [(2)  (define g (unsafe-array-proc arr))
+          ; <nope> Vector accesses for js require a change to the input type of unsafe-build-array
+          (unsafe-build-array
+           new-ds
+           (λ: ([js : Indexes])
+             (define j0 (unsafe-vector-ref js 0))
+             (define j1 (unsafe-vector-ref js 1))
+             ; <refined> Refinements allow the only safe vector accesses in this function.
+             (unsafe-vector-set! js 0 (unsafe-vector-ref (safe-vector-ref old-jss 0) j0))
+             (unsafe-vector-set! js 1 (unsafe-vector-ref (safe-vector-ref old-jss 1) j1))
+             (define v (g js))
+             (unsafe-vector-set! js 0 j0)
+             (unsafe-vector-set! js 1 j1)
+             v))]
+    [else
+     (define old-js (make-thread-local-indexes dims))
+     (unsafe-array-transform
+      arr new-ds
+      (λ: ([new-js : Indexes])
+        (let ([old-js  (old-js)])
+          (let: loop : Indexes ([i : Nonnegative-Fixnum  0])
+            (cond [(i . < . dims)
+                   ; <nope> Vector-ref of new-js requires change to input type of unsafe-array-transform
+                   (define new-ji (unsafe-vector-ref new-js i))
+                   ; <nope> Vector ref of old-jss requires us to know that new-ds and old-jss have the same length.
+                   ; I believe this is the case, but we cannot annotate new-ds to say this without changing the type
+                   ; of vector-map.
+                   (define old-ji (unsafe-vector-ref (unsafe-vector-ref old-jss i) new-ji))
+                   (unsafe-vector-set! old-js i old-ji)
+                   (loop (+ i 1))]
+                  [else  old-js])))))]))
+

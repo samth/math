@@ -61,6 +61,7 @@
 (: array-axis-fold/no-init (All (A) ((Array A) Integer (A A -> A) -> (Array A))))
 (define (array-axis-fold/no-init arr k f)
   (let ([k  (check-array-axis 'array-axis-fold arr k)])
+    ; <nope> We need to be able to reason about (array-shape arr).
     (when (fx= (unsafe-vector-ref (array-shape arr) k) 0)
       (raise-argument-error 'array-axis-fold "nonzero axis" 0 arr k))
     (unsafe-array-axis-reduce
