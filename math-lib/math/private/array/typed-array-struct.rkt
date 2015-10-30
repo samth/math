@@ -108,6 +108,7 @@
       (let* ([old-f  (unbox f)]
              [vs     (inline-build-array-data ds (λ (js j) (old-f js)) A)])
         ;; Make a new f that just indexes into vs
+        ; <nope> Requires a change to the input types of set-box!
         (set-box! f (λ: ([js : Indexes])
                       (unsafe-vector-ref vs (unsafe-array-index->value-index ds js))))))
     (define unsafe-proc
