@@ -170,6 +170,9 @@
                              (define dms (vector-length ds))
                              (vector-append ((inst make-vector Index) (- dims dms) 1) ds))
                            dss)]
+                ; <nope> Requires us to be able to reason about our input vector, ds,
+                ; and to be able to change the input type of array-append*, which
+                ; is outward facing.
                 [dks  (map (λ: ([ds : Indexes]) (unsafe-vector-ref ds k)) dss)]
                 [dss  (map (λ: ([ds : Indexes]) (unsafe-vector-remove ds k)) dss)]
                 [ds   (array-shape-broadcast dss)]

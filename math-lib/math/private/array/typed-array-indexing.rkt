@@ -183,6 +183,10 @@
     (for/fold: ([arr : (Array A)  arr]
                 [jss : (Listof (Vectorof Index))  null])
                ([s  (in-list (reverse slices))]
+                ; <nope> Should work, but adding refinement doesn't update the type of k
+                ; as we would like. mIf we add a refinement as follows:
+                ; [k : (Refine [k : Integer] (< k dims)) (in-range dims)]
+                ; k still returns as type Integer rather than our refinement.
                 [k  (in-range (- dims 1) -1 -1)])
       (define dk (unsafe-vector-ref ds k))
       (cond [(integer? s)

@@ -115,15 +115,6 @@
       (λ: ([js : Indexes]) ((unbox f) js)))
     (Array ds size ((inst box Boolean) #f) strict! unsafe-proc)))
 
-#;#;
-(: safe-build-simple-array (All (A) (~> ([ds : Indexes]
-                                         [f : (~> ([js : (Refine [js : Indexes] (= (len js) (len ds)))])
-                                             A)])
-                                        (Array A))))
-(define (safe-build-simple-array ds f)
-  (define size (check-array-shape-size 'unsafe-build-simple-array ds))
-  (Safe-Array ds size (box #t) void f))
-
 (: unsafe-build-simple-array (All (A) (Indexes (Indexes -> A) -> (Array A))))
 (define (unsafe-build-simple-array ds f)
   (define size (check-array-shape-size 'unsafe-build-simple-array ds))
