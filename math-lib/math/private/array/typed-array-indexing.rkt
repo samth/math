@@ -290,7 +290,7 @@
      (unsafe-array-transform
       arr new-ds
       (λ: ([new-js : Indexes])
-        (let ([old-js  (old-js)])
+        (let ([old-js (old-js)])
           (let: loop : Indexes ([i : Nonnegative-Fixnum  0])
             (cond [(i . < . dims)
                    ; <nope> Vector-ref of new-js requires change to input type of unsafe-array-transform
@@ -299,6 +299,7 @@
                    ; I believe this is the case, but we cannot annotate new-ds to say this without changing the type
                    ; of vector-map.
                    (define old-ji (unsafe-vector-ref (unsafe-vector-ref old-jss i) new-ji))
+                   ; <nope> old-js is defined as a output function, so annotating it is difficult.
                    (unsafe-vector-set! old-js i old-ji)
                    (loop (+ i 1))]
                   [else  old-js])))))]))

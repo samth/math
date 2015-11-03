@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/promise
+(require typed/safe/ops
+         racket/promise
          racket/performance-hint
          "../unsafe.rkt"
          "for-each.rkt"
@@ -106,6 +107,8 @@
     ;; strict" invariant easier to ensure in subtypes, which we don't always have control over
     (define (strict!)
       (let* ([old-f  (unbox f)]
+             ; <nope> inline-build-array-data expands to a vector-ref in a macro in for-each.rkt
+             ; There doesn't seem to be any reason why that vector reference shouldn't type-check properly
              [vs     (inline-build-array-data ds (λ (js j) (old-f js)) A)])
         ;; Make a new f that just indexes into vs
         ; <nope> Requires a change to the input types of set-box!
@@ -140,6 +143,8 @@
 (: unsafe-list->array (All (A) (Indexes (Listof A) -> (Array A))))
 (define (unsafe-list->array ds xs)
   (define vs (list->vector xs))
+  ; <nope> Requires a change to the type of unsafe-build-simple-array,
+  ; which in turn requires nested function calls to support Refinement types.
   (unsafe-build-simple-array
    ds (λ: ([js : Indexes]) (unsafe-vector-ref vs (unsafe-array-index->value-index ds js)))))
 
@@ -172,6 +177,7 @@
             (delay (proc js))))
      (Promise A)))
   (define (strict!) (for: ([v  (in-vector vs)]) (force v)))
+  ; <nope> By design, we know nothing about vs, so we cannot reason about its length
   (define unsafe-proc
     (λ: ([js : Indexes])
       (force (unsafe-vector-ref vs (unsafe-array-index->value-index ds js)))))

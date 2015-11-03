@@ -42,7 +42,16 @@
       (λ: ([js : Indexes])
         (let ([old-js  (old-js)])
           (let: loop : Indexes ([i : Nonnegative-Fixnum  0])
+            ; <nope> set! requires us to know more about ref
             (cond [(i . < . dims)  (unsafe-vector-set! old-js
+                  ; <nope> ref requires a change to the type of the input function of unsafe-array-transform,
+                  ; which requres nested function types to reason about outer functions, as follows:
+                  #; (: unsafe-array-transform (All (A) (~> ([arr : (Array A)]
+                                      [new-ds : Indexes]
+                                      [idx-fun : (~>
+                                                  ([js : (Refine [js : Indexes] (= (len js) (len ds)))])
+                                                     Indexes)])
+                                     (Array A))))
                                                        (unsafe-vector-ref perm i)
                                                        (unsafe-vector-ref js i))
                                    (loop (+ i 1))]
@@ -146,6 +155,7 @@
          (define g (unsafe-array-proc arr))
          (define old-js (make-thread-local-indexes old-dims))
          (array-default-strict
+          ; <nope> safe vector-ref into js requires a change in the type of unsafe-build-array
           (unsafe-build-array
            ds (λ: ([js : Indexes])
                 (let ([old-js  (old-js)])
@@ -192,6 +202,7 @@
       [else
        (define dss (map (λ: ([arr : (Array A)]) (array-shape arr)) arrs))
        (define new-ds (vector-copy-all (car dss)))
+       ; <nope> We have no information about new-ds.
        (unsafe-vector-set! new-ds k new-dk)
        ;; Make two mappings:
        ;; 1. old-procs : new array index -> old array procedure
@@ -204,6 +215,7 @@
            (define proc (unsafe-array-proc arr))
            (define dk (car dks))
            (let i-loop ([#{i : Nonnegative-Fixnum} 0] [#{jk : Nonnegative-Fixnum} jk])
+             ; <nope> No indication of the size of the vectors in relation to jk
              (cond [(i . < . dk)  (unsafe-vector-set! old-procs jk proc)
                                   (unsafe-vector-set! old-jks jk i)
                                   (i-loop (+ i 1) (unsafe-fx+ jk 1))]

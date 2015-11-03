@@ -19,6 +19,7 @@
                ds (λ () (raise-argument-error 'axis-index-array "(Vectorof Index)" 0 ds k)))]
          [dims  (vector-length ds)])
     (cond [(and (0 . <= . k) (k . < . dims))
+           ; <nope> need to be able to reason about nested function types.
            (unsafe-build-simple-array ds (λ: ([js : Indexes]) (unsafe-vector-ref js k)))]
           [else  (raise-argument-error 'axis-index-array (format "Index < ~a" dims) 1 ds k)])))
 
@@ -45,6 +46,9 @@
          (cond [(or (dims . <= . 1) (size . <= . 1))
                 (unsafe-build-simple-array ds (λ: ([js : Indexes]) on-value))]
                [(= dims 2)
+                ; <nope> All accesses into js require a change in the type of
+                ; unsafe-build-simple-array. Specifically, the function input
+                ; must input a vector of length at least 2.
                 (unsafe-build-simple-array
                  ds (λ: ([js : Indexes])
                       (define j0 (unsafe-vector-ref js 0))

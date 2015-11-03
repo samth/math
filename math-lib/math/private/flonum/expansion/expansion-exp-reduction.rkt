@@ -49,6 +49,8 @@ negative.
         [(x . fl>= . expm1-min)
          (define k (flfloor (fl/ (fllog x) (fllog base))))
          (define i (- (fl->exact-integer k) kmin))
+         ; <nope> Despite the fact that positive-ds is generated via a method that
+         ; would allow us to reason about it, the way it is defined here it is mutable.
          (define expm1-b^k (vector-ref positive-ds i))
          (define b^k (vector-ref base^ks i))
          (let*-values ([(d2 d1)  (values (car expm1-b^k) (cdr expm1-b^k))])
@@ -57,6 +59,7 @@ negative.
         [(x . fl> . -650.0)
          (define k (flfloor (fl/ (fllog (- x)) (fllog base))))
          (define i (- (fl->exact-integer k) kmin))
+         ; <nope> negative-ds is a mutable vector
          (define expm1-b^k (vector-ref negative-ds i))
          (define b^k (vector-ref base^ks i))
          (let*-values ([(d2 d1)  (values (car expm1-b^k) (cdr expm1-b^k))])

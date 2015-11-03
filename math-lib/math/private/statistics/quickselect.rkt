@@ -17,16 +17,13 @@ otherwise
 (provide kth-value! kth-value)
 
 (: safe-partition! (All (A) (~> ([vs : (Vectorof A)]
-                                 [start : Fixnum]
-                                 [end : (Refine [end : Fixnum]
-                                                (<= end (len vs))
-                                                (<= start end))]
+                                 [start : Positive-Fixnum]
+                                 [end : (Refine [end : Positive-Fixnum]
+                                                (<= end (len vs)))]
                                  [lt? : (A A -> Any)])
                                 Fixnum)))
 (define (safe-partition! vs start end lt?)
-  ; <nope> Attempting to refinements to the type of partition!
-  ; returns a very unhelpful error message:
-  ; ../../../../../typed-racket-lib/typed-racket/typecheck/tc-metafunctions.rkt:91:7: match: no matching clause for -
+  ; <nope> The types of start and end are not consistent.
   (define p (+ start (random (unsafe-fx- (unsafe-fx+ end 1) start))))
   (define pivot (unsafe-vector-ref vs p))
   (unsafe-vector-set! vs p (unsafe-vector-ref vs end))
@@ -37,7 +34,7 @@ otherwise
            (cond [(lt? v1 pivot)  (loop (unsafe-fx+ start 1) end)]
                  [else
                   (unsafe-vector-set! vs end v1)
-                  (let ([end  (unsafe-fx- end 1)])
+                  (let ([end (unsafe-fx- end 1)])
                     (unsafe-vector-set! vs start (unsafe-vector-ref vs end))
                     (loop start end))])]
           [else
@@ -46,8 +43,7 @@ otherwise
 
 (: partition! (All (A) ((Vectorof A) Fixnum Fixnum (A A -> Any) -> Fixnum)))
 (define (partition! vs start end lt?)
-  ; <nope> p defined using random. Cannot be sure that vector accesses using
-  ; p are safe unless we add refinements for both start and end.
+  ; <nope> p defined using random. Cannot be sure that vector accesses using p are safe
   (define p (+ start (random (unsafe-fx- (unsafe-fx+ end 1) start))))
   (define pivot (unsafe-vector-ref vs p))
   (unsafe-vector-set! vs p (unsafe-vector-ref vs end))

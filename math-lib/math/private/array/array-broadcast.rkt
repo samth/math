@@ -32,9 +32,11 @@
      (let ([old-js  (old-js)])
        (let: loop : A ([k : Nonnegative-Fixnum  0])
          (cond [(k . < . old-dims)
+                ; <nope> don't have type information about new-js, specifically its length.
                 (define new-jk (unsafe-vector-ref new-js (+ k shift)))
                 (define old-dk (safe-vector-ref old-ds k))
                 (define old-jk (unsafe-fxmodulo new-jk old-dk))
+                ; <nope> old-js defined as a thunk, so its length is obscured.
                 (unsafe-vector-set! old-js k old-jk)
                 (loop (+ k 1))]
                [else  (old-f old-js)]))))))

@@ -23,6 +23,10 @@
       [b (in-naturals)])
   (vector-set! mod60->bits x (assert b byte?)))
 
+; <nope> If we were to add a refinement to mod60->bit, we would need to add a refinement
+; to (mod60->bit (remainder x 60)) such as (U #f (Refine [b : Byte] (< b (len mod60->bits)))),
+; but remainder does not know that being less than 60 is the same as being less than the
+; length of mod60->bit.
 (: mod60->bit (Byte -> (U #f Byte)))
 (define (mod60->bit m) (vector-ref mod60->bits m))
 

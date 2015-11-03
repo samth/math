@@ -195,8 +195,9 @@
   (let ()
     ; TODO: Only store odd integers in this table
     (define N *VERY-SMALL-PRIME-LIMIT*)
-    ; <refined-local> Annotation added to ps for safe vector operations.
-    (define ps : (Refine [ps : (Vectorof Boolean)] (= (+ N 1) (len ps))) (make-vector (+ N 1) #t))
+    ; <refined-local> Annotation added to ps for safe vector operations. REMOVED
+    (define ps (make-vector (+ N 1) #t))
+    ;(define ps : (Refine [ps : (Vectorof Boolean)] (= (+ N 1) (len ps))) (make-vector (+ N 1) #t))
     (safe-vector-set! ps 0 #f)
     (safe-vector-set! ps 1 #f)
     ; <refined-local> Annotation added to n & m to confirm that it is in range of ps.

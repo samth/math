@@ -102,6 +102,8 @@
           [(fl= x (flround x))
            (let* ([flexp2s  flexp2s]
                   [flexp2s  (if flexp2s flexp2s (build-flexp2s))])
+             ; <nope> Need to reason about flonum arithmetic in relation to
+             ; the size of flexp2s.
              (unsafe-vector-ref flexp2s (fl->exact-integer (fl+ x 1074.0))))]
           [else  (flexpt 2.0 x)]))
   

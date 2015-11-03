@@ -49,8 +49,8 @@
   (define len (vector-length vec))
   (cond [(zero? len)  (raise-argument-error 'walker-table-sample "nonempty Walker-Table" vec)]
         [else
-         ; <refined-local> Refinement added for i.
-         (define i : (Refine [i : Nonnegative-Fixnum] (< i len)) (random len))
+         ; <refined-local> Refinement added for i. REMOVED
+         (define i (random len))
          (define xws (safe-vector-ref vec i))
          (define rest-xws (rest xws))
          (cond [(empty? rest-xws)  (car (first xws))]

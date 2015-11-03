@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require racket/performance-hint
+(require typed/safe/ops
+         racket/performance-hint
          "../unsafe.rkt"
          "utils.rkt")
 
@@ -128,7 +129,7 @@
                 (void)])])))
 
 (define-syntax-rule (inline-build-array-data ds-expr g-expr A)
-  (let*: ([ds : Indexes  ds-expr]
+  (let* ([ds : Indexes  ds-expr]
           [dims : Index  (vector-length ds)])
     (define-syntax-rule (g js j)
       ((ann g-expr (Indexes Nonnegative-Fixnum -> A)) js j))

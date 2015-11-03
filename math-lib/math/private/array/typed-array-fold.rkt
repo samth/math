@@ -32,6 +32,8 @@
      new-ds (λ: ([js : Indexes])
               (define old-js (unsafe-vector-insert js k 0))
               (f dk (λ: ([jk : Index])
+                      ; <nope> old-js build using both unsafe-vector-insert and unsafe-build-array
+                      ; so reasoning about it is difficult.
                       (unsafe-vector-set! old-js k jk)
                       (proc old-js)))))))
 
