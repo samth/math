@@ -57,7 +57,7 @@
                  [else
                   (define veci+1 (i-loop (+ i 1)))
                   ; <refined-local> Refinement for veci added.
-                  (define veci : (Refine [veci : (Vectorof (Vectorof* A))] (= di (len veci))) (make-vector di veci+1))
+                  (define veci #; (Refine [veci : (Vectorof (Vectorof* A))] (= di (len veci))) (make-vector di veci+1))
                   (let: j-loop : (Vectorof* A) ([ji : Nonnegative-Fixnum  0])
                     (cond [(ji . < . di)
                            (safe-vector-set! js i ji)
