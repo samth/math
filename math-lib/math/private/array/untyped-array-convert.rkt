@@ -70,7 +70,7 @@
     (define (list*->flat-vector lst size pred?)
       (cond [(zero? size)  (vector)]
             [else
-             (define vec : (Refine [vec: (Vectorof A)] (= size (len vec))) (make-vector size (first* lst pred?)))
+             (define vec : (Refine [vec : (Vectorof A)] (= size (len vec))) (make-vector size (first* lst pred?)))
              (let: loop : Fixnum ([lst : (Listof* A)  lst] [i : (Refine [i : Fixnum] (< i size))  0])
                (cond [(pred? lst)  (safe-vector-set! vec i lst)
                                    (unsafe-fx+ i 1)]
