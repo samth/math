@@ -69,8 +69,8 @@
   (unsafe-vector-ref (unsafe-vector-ref vss i) j))
 
 ;; Note: this accepts +nan.0
-(define nonnegative?
-  (λ: ([x : Real]) (not (x . < . 0))))
+(: nonnegative? (-> Real Boolean))
+(define (nonnegative? x) (not (< x 0)))
 
 (define number-rational?
   (λ: ([z : Number])
