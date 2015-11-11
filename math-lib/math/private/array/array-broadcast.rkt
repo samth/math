@@ -18,7 +18,8 @@
   (define old-ds (array-shape arr))
   (define old-dims (vector-length old-ds))
   (define new-dims (vector-length new-ds))
-  (define shift
+  (define shift : (Refine [i : Index] (= i (+ (len new-ds)
+                                              (* -1 (len old-ds)))))
     (let ([shift  (- new-dims old-dims)])
       (cond [(index? shift)  shift]
             [else  (error 'array-broadcast

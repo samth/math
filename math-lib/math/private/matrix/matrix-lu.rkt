@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
 (require racket/fixnum
+         typed/safe/ops
          "matrix-types.rkt"
          "matrix-conversion.rkt"
          "matrix-arithmetic.rkt"
@@ -68,7 +69,9 @@
                   (loop (fx+ i 1))]))])]
          [else
           ;; L's lower triangle has been filled; now fill the diagonal with 1s
-          (for: ([i : Integer (in-range 0 m)])
-            (define j (+ (* i m) i))
-            (vector-set! ys j (one* (vector-ref ys j))))
+          (for: ([i : Natural (in-range 0 m)])
+            (define j : Natural (+ (* i m) i))
+            (unless (j . < . (vector-length ys))
+              (error "invalid lower triangle index!"))
+            (safe-vector-set! ys j (one* (safe-vector-ref ys j))))
           (values L (vector*->matrix rows))]))]))
