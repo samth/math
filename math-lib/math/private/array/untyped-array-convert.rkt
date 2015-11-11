@@ -1,6 +1,4 @@
-
-
-#lang racket/base
+#lang typed/racket/base
 
 (require racket/unsafe/ops
          typed/safe/ops
@@ -24,7 +22,8 @@
                                             -> (U #f (Vectorof Integer)))))
     (define (vector-shape vec pred?)
       (maybe-list->vector
-       (let: vector-shape : (U #f (Listof Integer)) ([vec : (Vectorof* A)  vec])
+       (let: vector-shape : (U #f (Listof Integer))
+         ([vec : (Vectorof* A)  vec])
          (cond [(pred? vec)  (list)]
                [else
                 (define d (vector-length vec))
@@ -68,16 +67,18 @@
                          (loop lst))
                        (error 'first* "no first* element")]))))
     ;; (Listof* A) = (Rec T (U A (Listof T))) = A or (Listof (Listof* A))
-    (: list*->flat-vector (All (A) ((Listof* A) Integer ((Listof* A) -> Any : A) -> (Vectorof A))))
+    (: list*->flat-vector (All (A) ((Listof* A) Integer
+                                                ((Listof* A) -> Any : A)
+                                                -> (Vectorof A))))
     (define (list*->flat-vector lst size A?)
-     (cond [(zero? size)  (vector)]
+     (cond [(< size 0) (error 'list*->flat-vector "internal error")]
+           [(= size 0)  (vector)]
             [else
-             (define last-i (sub1 size))
              (define vec : (Refine [v : (Vectorof A)] (= size (len v)))
                (make-vector size (first* lst A?)))
-             (let: loop : (Refine [j : Fixnum] (<= j (len vec)))
+             (let: loop : (Refine [j : Nonnegative-Fixnum] (<= j (len vec)))
                ([lst : (Listof* A)  lst]
-                [i : (Refine [j : Fixnum] (<= j (len vec))) 0])
+                [i : (Refine [j : Nonnegative-Fixnum] (<= j (len vec))) 0])
                (cond [(= i size) size]
                      [(A? lst) (safe-vector-set! vec i lst)
                                (unsafe-fx+ 1 i)]
