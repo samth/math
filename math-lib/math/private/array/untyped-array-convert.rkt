@@ -68,12 +68,9 @@
                          (loop lst))
                        (error 'first* "no first* element")]))))
     ;; (Listof* A) = (Rec T (U A (Listof T))) = A or (Listof (Listof* A))
-    ;;     = A or Null or (Pairof (Listof* A) (Listof (Listof* A)))
     (: list*->flat-vector (All (A) ((Listof* A) Integer ((Listof* A) -> Any : A) -> (Vectorof A))))
     (define (list*->flat-vector lst size A?)
-      ;; assumption - the number of things A? will return non-#f for
-      ;; <= size
-      (cond [(zero? size)  (vector)]
+     (cond [(zero? size)  (vector)]
             [else
              (define last-i (sub1 size))
              (define vec : (Refine [v : (Vectorof A)] (= size (len v)))
@@ -84,7 +81,6 @@
                (cond [(= i size) size]
                      [(A? lst) (safe-vector-set! vec i lst)
                                (unsafe-fx+ 1 i)]
-                     ;; lst is (Listof (Listof* A))
                      [(pair? lst) (loop (cdr lst) (loop (car lst) i))]
                      [else  i]))
              vec]))
