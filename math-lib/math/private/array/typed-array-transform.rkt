@@ -46,14 +46,15 @@
             (cond [(i . < . dims)  (unsafe-vector-set! old-js
                   ; <nope> ref requires a change to the type of the input function of unsafe-array-transform,
                   ; which requres nested function types to reason about outer functions, as follows:
-                  #; (: unsafe-array-transform (All (A) (~> ([arr : (Array A)]
-                                      [new-ds : Indexes]
-                                      [idx-fun : (~>
-                                                  ([js : (Refine [js : Indexes] (= (len js) (len ds)))])
-                                                     Indexes)])
-                                     (Array A))))
-                                                       (unsafe-vector-ref perm i)
-                                                       (unsafe-vector-ref js i))
+                  ; (: unsafe-array-transform
+                       ;(All (A) (~> ([arr : (Array A)]
+                  ;       [new-ds : Indexes]
+                   ;      [idx-fun : (~>
+                    ;    ([js : (Refine [js : Indexes] (= (len js) (len ds)))])
+                     ;        Indexes)])
+                      ;       (Array A))))
+                  (unsafe-vector-ref perm i)
+                  (unsafe-vector-ref js i))
                                    (loop (+ i 1))]
                   [else  old-js]))))))))
 

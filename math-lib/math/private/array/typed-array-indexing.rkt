@@ -180,29 +180,38 @@
   (define ds (array-shape arr))
   (define dims (vector-length ds))
   (define-values (new-arr old-jss)
-    (for/fold: ([arr : (Array A)  arr]
-                [jss : (Listof (Vectorof Index))  null])
-               ([s  (in-list (reverse slices))]
-                ; <nope> Should work, but adding refinement doesn't update the type of k
-                ; as we would like. If we add a refinement as follows:
-                ; [k : (Refine [k : Integer] (< k dims)) (in-range dims)]
-                ; k still returns as type Integer rather than our refinement.
-                [k  (in-range (- dims 1) -1 -1)])
-      (define dk (unsafe-vector-ref ds k))
-      (cond [(integer? s)
-             (when (or (s . < . 0) (s . >= . dk))
-               (error name "expected Index < ~e in slice ~e (axis ~e)" dk s k))
-             (values (array-axis-ref arr k s) jss)]
-            [(slice? s)
-             (values arr (cons (slice->vector s k dk) jss))]
-            [else
-             (define js
-               (for/fold: ([js : (Listof Index)  null]) ([jk s])
-                 (cond [(or (jk . < . 0) (jk . >= . dk))
-                        (error name "expected Index < ~e in slice ~e (axis ~e); given ~e"
-                               dk s k jk)]
-                       [else  (cons jk js)])))
-             (values arr (cons ((inst list->vector Index) (reverse js)) jss))])))
+    (let loop : (Values (Array A) (Listof (Vectorof Index)))
+      ([slices : (Listof Slice-Spec--) (reverse slices)]
+       [k : (Refine [i : Integer] (<= -1 i (+ dims -1))) (- dims 1)]
+       [arr : (Array A)  arr]
+       [jss : (Listof (Vectorof Index))  null])
+      (cond
+        [(or (k . < . 0)
+             (null? slices))
+         (values arr jss)]
+        [else
+         (define dk (safe-vector-ref ds k))
+         (match-define (cons s rst-slices) slices)
+         (cond [(integer? s)
+                (when (or (s . < . 0) (s . >= . dk))
+                  (error name "expected Index < ~e in slice ~e (axis ~e)" dk s k))
+                (values (array-axis-ref arr k s) jss)]
+               [(slice? s)
+                (loop rst-slices
+                      (unsafe-fx- k 1)
+                      arr
+                      (cons (slice->vector s k dk) jss))]
+               [else
+                (define js
+                  (for/fold: ([js : (Listof Index)  null]) ([jk s])
+                    (cond [(or (jk . < . 0) (jk . >= . dk))
+                           (error name "expected Index < ~e in slice ~e (axis ~e); given ~e"
+                                  dk s k jk)]
+                          [else  (cons jk js)])))
+                (loop rst-slices
+                      (unsafe-fx- k 1)
+                      arr
+                      (cons ((inst list->vector Index) (reverse js)) jss))])])))
   (values new-arr (list->vector old-jss)))
 
 (: expand-dots (Index (Listof Slice-Spec) -> (Listof Slice-Spec-)))
@@ -267,24 +276,30 @@
           (unsafe-build-array
            new-ds
            (λ: ([js : Indexes])
-             (define j0 (unsafe-vector-ref js 0))
-             (unsafe-vector-set! js 0 (unsafe-vector-ref (unsafe-vector-ref old-jss 0) j0))
-             (define v (g js))
-             (unsafe-vector-set! js 0 j0)
-             v))]
+             (cond
+               [(> (vector-length js) 0)
+                (define j0 (safe-vector-ref js 0))
+                (safe-vector-set! js 0 (unsafe-vector-ref (unsafe-vector-ref old-jss 0) j0))
+                (define v (g js))
+                (safe-vector-set! js 0 j0)
+                v]
+               [else (error 'unsafe-build-array "internal error")])))]
     [(2)  (define g (unsafe-array-proc arr))
           ; <nope> Vector accesses for js require a change to the input type of unsafe-build-array
           (unsafe-build-array
            new-ds
            (λ: ([js : Indexes])
-             (define j0 (unsafe-vector-ref js 0))
-             (define j1 (unsafe-vector-ref js 1))
-             (unsafe-vector-set! js 0 (unsafe-vector-ref (unsafe-vector-ref old-jss 0) j0))
-             (unsafe-vector-set! js 1 (unsafe-vector-ref (unsafe-vector-ref old-jss 1) j1))
-             (define v (g js))
-             (unsafe-vector-set! js 0 j0)
-             (unsafe-vector-set! js 1 j1)
-             v))]
+             (cond
+               [(> (vector-length js) 1)
+                (define j0 (safe-vector-ref js 0))
+                (define j1 (safe-vector-ref js 1))
+                (safe-vector-set! js 0 (unsafe-vector-ref (unsafe-vector-ref old-jss 0) j0))
+                (safe-vector-set! js 1 (unsafe-vector-ref (unsafe-vector-ref old-jss 1) j1))
+                (define v (g js))
+                (safe-vector-set! js 0 j0)
+                (safe-vector-set! js 1 j1)
+                v]
+               [else (error 'unsafe-build-array "internal error")])))]
     [else
      (define old-js (make-thread-local-indexes dims))
      (unsafe-array-transform
@@ -300,58 +315,6 @@
                    ; of vector-map.
                    (define old-ji (unsafe-vector-ref (unsafe-vector-ref old-jss i) new-ji))
                    ; <nope> old-js is defined as a output function, so annotating it is difficult.
-                   (unsafe-vector-set! old-js i old-ji)
-                   (loop (+ i 1))]
-                  [else  old-js])))))]))
-
-(: safe-array-axis-transform (All (A) (~> ([arr : (Array A)]
-                                           [outer : (Refine [outer : (Vectorof (Vectorof Index))] (< 1 (len outer)))])
-                                          (Array A))))
-(define (safe-array-axis-transform arr old-jss)
-  (define new-ds : Indexes (vector-map vector-length old-jss))
-  (define dims (vector-length new-ds))
-  (case dims
-    [(0)  arr]
-    [(1)  (define g (unsafe-array-proc arr))
-          ; <nope> Vector accesses for js require a change to the input type of unsafe-build-array
-          ; <nope> Therefore cannot do vector accesses with regard to j0 because it relies on an access into js.
-          (unsafe-build-array
-           new-ds
-           (λ: ([js : Indexes])
-             (define j0 (unsafe-vector-ref js 0))
-             ; <refined> Refinement added for safety.
-             (unsafe-vector-set! js 0 (unsafe-vector-ref (safe-vector-ref old-jss 0) j0))
-             (define v (g js))
-             (unsafe-vector-set! js 0 j0)
-             v))]
-    [(2)  (define g (unsafe-array-proc arr))
-          ; <nope> Vector accesses for js require a change to the input type of unsafe-build-array
-          (unsafe-build-array
-           new-ds
-           (λ: ([js : Indexes])
-             (define j0 (unsafe-vector-ref js 0))
-             (define j1 (unsafe-vector-ref js 1))
-             ; <refined> Refinements allow the only safe vector accesses in this function.
-             (unsafe-vector-set! js 0 (unsafe-vector-ref (safe-vector-ref old-jss 0) j0))
-             (unsafe-vector-set! js 1 (unsafe-vector-ref (safe-vector-ref old-jss 1) j1))
-             (define v (g js))
-             (unsafe-vector-set! js 0 j0)
-             (unsafe-vector-set! js 1 j1)
-             v))]
-    [else
-     (define old-js (make-thread-local-indexes dims))
-     (unsafe-array-transform
-      arr new-ds
-      (λ: ([new-js : Indexes])
-        (let ([old-js  (old-js)])
-          (let: loop : Indexes ([i : Nonnegative-Fixnum  0])
-            (cond [(i . < . dims)
-                   ; <nope> Vector-ref of new-js requires change to input type of unsafe-array-transform
-                   (define new-ji (unsafe-vector-ref new-js i))
-                   ; <nope> Vector ref of old-jss requires us to know that new-ds and old-jss have the same length.
-                   ; I believe this is the case, but we cannot annotate new-ds to say this without changing the type
-                   ; of vector-map.
-                   (define old-ji (unsafe-vector-ref (unsafe-vector-ref old-jss i) new-ji))
                    (unsafe-vector-set! old-js i old-ji)
                    (loop (+ i 1))]
                   [else  old-js])))))]))

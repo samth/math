@@ -18,18 +18,26 @@
 (begin-encourage-inline
 
    ; <refined-local> new-js required a refinement that its length is dims.
-  (: vector->supertype-vector (All (A B) ((Vectorof A) -> (Vectorof (U A B)))))
+  (: vector->supertype-vector
+     (All (A B)
+          (~> ([v : (Vectorof A)])
+              (Refine [res : (Vectorof (U A B))] (= (len v) (len res))))))
   (define (vector->supertype-vector js)
     (define dims (vector-length js))
-    (cond [(= dims 0)  (vector)]
+    (cond [(= dims 0)  (build-vector 0 (λ (x) (error 'impossible)))]
           [else  (define new-js : (Refine [new-js : (Vectorof (U A B))]
-                                          (= dims (len new-js))) (make-vector dims (safe-vector-ref js 0)))
-                 (let loop ([#{i : Nonnegative-Fixnum} 1])
+                                          (= dims (len new-js)))
+                   (make-vector dims (safe-vector-ref js 0)))
+                 (let loop : (Refine [new-js : (Vectorof (U A B))]
+                                          (= dims (len new-js)))
+                   ([#{i : Nonnegative-Fixnum} 1])
                    (cond [(i . < . dims)  (safe-vector-set! new-js i (safe-vector-ref js i))
                                           (loop (+ i 1))]
                          [else  new-js]))]))
   
-  (: vector-copy-all (All (A) ((Vectorof A) -> (Vectorof A))))
+  (: vector-copy-all
+     (All (A) (~> ([v : (Vectorof A)])
+                  (Refine [res : (Vectorof A)] (= (len v) (len res))))))
   (define (vector-copy-all js) ((inst vector->supertype-vector A A) js))
   
   (: array-shape-size (Indexes -> Natural))
@@ -289,12 +297,16 @@
            (loop (unsafe-cdr perm) (+ i 1))]
           [else  (values new-ds new-perm)])))
 
-(: make-thread-local-indexes (Integer -> (-> Indexes)))
+(: make-thread-local-indexes (~> ([i : Integer])
+                                 (-> (Refine [v : Indexes] (= (len v) i)))))
 (define (make-thread-local-indexes dims)
-  (let: ([val : (Thread-Cellof (U #f Indexes)) (make-thread-cell #f)])
+  (let: ([val : (Thread-Cellof (U #f (Refine [v : Indexes] (= (len v) dims))))
+              (make-thread-cell #f)])
     (λ () (or (thread-cell-ref val)
-              (let: ([v : Indexes  (make-vector dims 0)])
-                (thread-cell-set! val v)
+              (let: ([v : (Refine [v : Indexes] (= (len v) dims))  (make-vector dims 0)])
+                ((inst thread-cell-set!
+                       (U #f (Refine [v : Indexes] (= (len v) dims))))
+                 val v)
                 v)))))
 
 (: all-equal? (Any Any * -> Boolean))
