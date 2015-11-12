@@ -53,6 +53,7 @@
                  (loop (fx+ i 1)))
           (void)))))
 
+
 (: vector-scale! (case-> ((Vectorof Flonum) Flonum -> Void)
                          ((Vectorof Real) Real -> Void)
                          ((Vectorof Float-Complex) Float-Complex -> Void)
@@ -60,16 +61,18 @@
 (define (vector-scale! vs v)
   (vector-generic-scale! vs v *))
 
-;; <nope> We would need to recognize min and fixnum arithmetic to do safe vector accesses.
+;; <mod-fixed> We would need to recognize min and fixnum arithmetic to do better
 (define-syntax-rule (vector-generic-scaled-add! vs0-expr vs1-expr v-expr start-expr + *)
   (let* ([vs0  vs0-expr]
          [vs1  vs1-expr]
          [v    v-expr]
          [n    (fxmin (vector-length vs0) (vector-length vs1))])
+    (unless (and (<= n (vector-length vs0)) (<= n (vector-length vs1)))
+      (error 'min-error))
     (let loop ([#{i : Nonnegative-Fixnum} (fxmin start-expr n)])
       (if (i . fx< . n)
-          (begin (unsafe-vector-set! vs0 i (+ (unsafe-vector-ref vs0 i)
-                                              (* (unsafe-vector-ref vs1 i) v)))
+          (begin (safe-vector-set! vs0 i (+ (safe-vector-ref vs0 i)
+                                              (* (safe-vector-ref vs1 i) v)))
                  (loop (fx+ i 1)))
           (void)))))
 
@@ -98,21 +101,22 @@
            (cond [(i . fx< . n)  (loop (fx+ i 1) (+ s (mag^2 (safe-vector-ref vs i))))]
                  [else  (abs s)]))]))
 
-;; <nope> Requires the min type to be stronger for safe vector operations.
+;; <mod-fixed> Requires the min type to be stronger for a better win.
 (: vector-dot (case-> ((Vectorof Flonum) (Vectorof Flonum) -> Flonum)
                       ((Vectorof Real) (Vectorof Real) -> Real)
                       ((Vectorof Float-Complex) (Vectorof Float-Complex) -> Float-Complex)
                       ((Vectorof Number) (Vectorof Number) -> Number)))
 (define (vector-dot vs0 vs1)
   (define n (min (vector-length vs0) (vector-length vs1)))
+  (unless (and (<= n (vector-length vs0)) (<= n (vector-length vs1))) (error 'min-error))
   (cond [(fx= n 0)  (raise-argument-error 'vector-dot "nonempty Vector" 0 vs0 vs1)]
         [else
-         (define v0 (unsafe-vector-ref vs0 0))
-         (define v1 (unsafe-vector-ref vs1 0))
+         (define v0 (safe-vector-ref vs0 0))
+         (define v1 (safe-vector-ref vs1 0))
          (let loop ([#{i : Nonnegative-Fixnum} 1] [s (* v0 (conjugate v1))])
            (cond [(i . fx< . n)
-                  (define v0 (unsafe-vector-ref vs0 i))
-                  (define v1 (unsafe-vector-ref vs1 i))
+                  (define v0 (safe-vector-ref vs0 i))
+                  (define v1 (safe-vector-ref vs1 i))
                   (loop (fx+ i 1) (+ s (* v0 (conjugate v1))))]
                  [else  s]))]))
 
@@ -140,7 +144,7 @@
         [(float-complex? x)  1.0]
         [else  1]))
 
-;; <nope> Requires min function as follows for safe vector operation:
+;; <mod-fixed> We can make it better if min holds as follows:
 ;; (if (define n (min x y)) then (<= n x) & (<= n y)
 (: vector-sub-proj!
    (case-> ((Vectorof Flonum) (Vectorof Flonum) Any -> Nonnegative-Flonum)
@@ -149,16 +153,17 @@
            ((Vectorof Number) (Vectorof Number) Any -> Nonnegative-Real)))
 (define (vector-sub-proj! vs0 vs1 unit?)
   (define n (min (vector-length vs0) (vector-length vs1)))
+  (unless (and (<= n (vector-length vs0)) (<= n (vector-length vs1))) (error 'min-error))
   (cond [(fx= n 0)  (raise-argument-error 'vector-sub-proj! "nonempty Vector" 0 vs0 vs1)]
         [else
-         (define t (if unit? (one (unsafe-vector-ref vs0 0)) (vector-mag^2 vs1)))
+         (define t (if unit? (one (safe-vector-ref vs0 0)) (vector-mag^2 vs1)))
          (unless (and (zero? t) (exact? t))
            (define s (/ (vector-dot vs0 vs1) t))
            (let loop ([#{i : Nonnegative-Fixnum} 0])
              (when (i . fx< . n)
-               (define v0 (unsafe-vector-ref vs0 i))
-               (define v1 (unsafe-vector-ref vs1 i))
-               (unsafe-vector-set! vs0 i (- v0 (* v1 s)))
+               (define v0 (safe-vector-ref vs0 i))
+               (define v1 (safe-vector-ref vs1 i))
+               (safe-vector-set! vs0 i (- v0 (* v1 s)))
                (loop (fx+ i 1)))))
          t]))
 
