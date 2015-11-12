@@ -27,12 +27,13 @@
 ;; The point at which it seems to be faster to use a more complicated recurrence
 (define simple-cutoff 244)
 
-; <nope> fact-table is built using a mutable number.
 (: factorial-simple (Nonnegative-Fixnum -> Positive-Integer))
-(define (factorial-simple n)
-  (cond [(n . < . fact-table-size) (vector-ref fact-table n)]
-        [(< 0 n) (* n (factorial-simple (- n 1)))]
-        [else 1]))
+(define factorial-simple
+  (let ([fact-table-size (vector-length fact-table)])
+    (λ (n)
+      (cond [(n . < . fact-table-size) (safe-vector-ref fact-table n)]
+            [(< 0 n) (* n (factorial-simple (- n 1)))]
+            [else 1]))))
 
 (: factorial (case-> (Zero -> One)
                      (One -> One)

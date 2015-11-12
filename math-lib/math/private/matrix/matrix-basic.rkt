@@ -462,12 +462,19 @@
 (define (pairwise-orthogonal? Ms eps)
   (define rows (list->vector Ms))
   (define m (vector-length rows))
-  (let/ec: return : Boolean
-    (for*: ([i0  (in-range m)] [i1  (in-range (fx+ i0 1) m)])
-      (define r0 (unsafe-vector-ref rows i0))
-      (define r1 (unsafe-vector-ref rows i1))
-      (when ((magnitude (matrix-cos-angle r0 r1)) . >= . eps) (return #f)))
-    #t))
+  (let iloop ([i : Nonnegative-Fixnum 0])
+    (cond
+      [(>= i m) #t]
+      [else
+       (let jloop ([j : Nonnegative-Fixnum (fx+ i 1)])
+         (cond
+           [(>= j m) (iloop (fx+ i 1))]
+           [else
+            (define r0 (safe-vector-ref rows i))
+            (define r1 (safe-vector-ref rows j))
+            (if ((magnitude (matrix-cos-angle r0 r1)) . >= . eps)
+                #f
+                (jloop (fx+ j 1)))]))])))
 
 (: matrix-rows-orthogonal? (case-> ((Matrix Number) -> Boolean)
                                    ((Matrix Number) Real -> Boolean)))
