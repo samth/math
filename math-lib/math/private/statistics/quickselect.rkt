@@ -16,57 +16,57 @@ otherwise
 
 (provide kth-value! kth-value)
 
-(: safe-partition! (All (A) (~> ([vs : (Vectorof A)]
-                                 [start : Positive-Fixnum]
-                                 [end : (Refine [end : Positive-Fixnum]
-                                                (<= end (len vs)))]
-                                 [lt? : (A A -> Any)])
-                                Fixnum)))
-(define (safe-partition! vs start end lt?)
-  ; <nope> The types of start and end are not consistent.
-  (define p (+ start (random (unsafe-fx- (unsafe-fx+ end 1) start))))
-  (define pivot (unsafe-vector-ref vs p))
-  (unsafe-vector-set! vs p (unsafe-vector-ref vs end))
-  (unsafe-vector-set! vs end pivot)
-  (let loop ([#{start : Fixnum} start] [#{end : Fixnum} end])
-    (cond [(start . fx< . end)
-           (define v1 (unsafe-vector-ref vs start))
-           (cond [(lt? v1 pivot)  (loop (unsafe-fx+ start 1) end)]
-                 [else
-                  (unsafe-vector-set! vs end v1)
-                  (let ([end (unsafe-fx- end 1)])
-                    (unsafe-vector-set! vs start (unsafe-vector-ref vs end))
-                    (loop start end))])]
-          [else
-           (unsafe-vector-set! vs start pivot)
-           start])))
-
-(: partition! (All (A) ((Vectorof A) Fixnum Fixnum (A A -> Any) -> Fixnum)))
+(: partition! (All (A) (~> ([vs : (Refine [v : (Vectorof A)]
+                                          (< start (len v)))]
+                            [start : (Refine [start : Fixnum]
+                                             (<= 0 start) (< start end))]
+                            [end : (Refine [end : Fixnum]
+                                           (< start end)
+                                           (< end (len vs)))]
+                            [lt? : (A A -> Any)])
+                           (Refine [res : Fixnum] (<= start res) (<= res end)))))
 (define (partition! vs start end lt?)
-  ; <nope> p defined using random. Cannot be sure that vector accesses using p are safe
-  (define p (+ start (random (unsafe-fx- (unsafe-fx+ end 1) start))))
-  (define pivot (unsafe-vector-ref vs p))
-  (unsafe-vector-set! vs p (unsafe-vector-ref vs end))
-  (unsafe-vector-set! vs end pivot)
-  (let loop ([#{start : Fixnum} start] [#{end : Fixnum} end])
-    (cond [(start . fx< . end)
-           (define v1 (unsafe-vector-ref vs start))
-           (cond [(lt? v1 pivot)  (loop (unsafe-fx+ start 1) end)]
-                 [else
-                  (unsafe-vector-set! vs end v1)
-                  (let ([end  (unsafe-fx- end 1)])
-                    (unsafe-vector-set! vs start (unsafe-vector-ref vs end))
-                    (loop start end))])]
-          [else
-           (unsafe-vector-set! vs start pivot)
-           start])))
+  ; <nope> The types of start and end are not consistent.
+  (let ([p : (Refine [d : Natural] (= d (+ (* -1 start) end)))
+           (assert (- end start) exact-nonnegative-integer?)])
+    (let ([p : (Refine [a : Natural] (<= 0 a) (< a p))
+             (random p)])
+      (let ([p : (Refine [p : Integer] (<= 0 p) (< p (len vs)))
+               (+ start (+ 1 p))])
+        (let ([pivot : A (safe-vector-ref vs p)])
+          (safe-vector-set! vs p (safe-vector-ref vs end))
+          (safe-vector-set! vs end pivot)
+          (let loop ([l : (Refine [l : Fixnum]
+                                  (<= start l) (<= l end))
+                        start]
+                     [r : (Refine [r : Fixnum]
+                                  (<= start r) (<= r end))
+                        end])
+            (cond [(l  . fx< . r)
+                   (define v1 (safe-vector-ref vs l))
+                   (cond [(lt? v1 pivot)  (loop (unsafe-fx+ l 1) r)]
+                         [else
+                          (safe-vector-set! vs r v1)
+                          (let ([r* : (Refine [r* : Fixnum]
+                                              (<= start r*) (<= r* end))
+                                    (fx- r 1)])
+                            (safe-vector-set! vs l (safe-vector-ref vs r*))
+                            (loop l r*))])]
+                  [else
+                   (safe-vector-set! vs l pivot)
+                   l])))))))
 
-(: kth-value!* (All (A) ((Vectorof A) Nonnegative-Fixnum (A A -> Any) -> A)))
+(: kth-value!* (All (A) (~> ([v : (Refine [v : (Vectorof A)] (< 0 (len v)))]
+                             [k : (Refine [k : Nonnegative-Fixnum] (<= 0 k) (< k (len v)))]
+                             [lt? : (A A -> Any)])
+                            A)))
 (define (kth-value!* vs k lt?)
   (define n (vector-length vs))
-  (let loop ([#{start : Fixnum} 0] [#{end : Fixnum} (fx- n 1)] [k k])
+  (let loop ([start : (Refine [start : Fixnum] (<= 0 start)) 0]
+             [end : (Refine [end : Fixnum] (< end (len vs))) (fx- n 1)]
+             [k k])
     (cond [(start . fx< . end)
-           (let ([c  (partition! vs start end lt?)])
+           (let ([c (partition! vs start end lt?)])
              (define start+k (unsafe-fx+ start k))
              (cond [(c . fx> . start+k)
                     (loop start (unsafe-fx- c 1) k)]
