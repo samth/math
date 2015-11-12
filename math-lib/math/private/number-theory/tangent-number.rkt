@@ -23,7 +23,10 @@
              (safe-vector-set! T i (* (add1 i) (safe-vector-ref T (add1 i)))))
            (safe-vector-set! T k 0)
            ; multiply T[x] with 1+x^2
-           (for: ([i : (Refine [i : Natural] (<= i (+ k 1))) (in-range 2 (+ k 2) 1)])
-             (safe-vector-set! T i (+ (safe-vector-ref T i) (vector-ref T (- i 2))))))
+           (let loop ([i : (Refine [i : Natural] (<= 2 i (+ k 2))) 2])
+             (cond
+               [(>= i (+ k 2)) (void)]
+               [else (safe-vector-set! T i (+ (safe-vector-ref T i) (safe-vector-ref T (- i 2))))
+                     (loop (add1 i))])))
          (safe-vector-ref T 0)]))
 

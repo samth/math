@@ -38,7 +38,7 @@
          [ws  (flvector-sums (list->flvector ws))])
     (define n : (Refine [n : Index] (= n (len xs))) (vector-length xs))
     
-    (: find-new-endpoint (Index Index -> (Option Index)))
+    (: find-new-endpoint (Index Index -> (Option (Refine [i : Index] (< i n)))))
     ;; Returns the next index after i1 for which the sum of weights >= α
     (define (find-new-endpoint i0 i1)
       (define w0 (flvector-ref ws i0))
@@ -52,10 +52,12 @@
     (cond
       ; <nope> We have no indication that xs is non-empty. Unless we
       ;  are sure that this is ALWAYS the case, we cannot proceed.
-      [(not i1)  (values (vector-ref xs 0) (vector-ref xs (- n 1)))]
+      [(n . < . 1)
+       (error 'weighted-hpd-interval "internal error")]
+      [(not i1)  (values (safe-vector-ref xs 0) (safe-vector-ref xs (- n 1)))]
       [else
-       (define a* (vector-ref xs 0))
-       (define b* (vector-ref xs i1))
+       (define a* (safe-vector-ref xs 0))
+       (define b* (safe-vector-ref xs i1))
        (define d* (abs (metric b* a*)))
        (let loop ([i0 : Nonnegative-Fixnum  1] [i1 : Index  i1] [a* a*] [b* b*] [d* d*])
          ;(printf "i0 = ~v  i1 = ~v~na* = ~v  b* = ~v~nd* = ~v~n" i0 i1 a* b* d*)
@@ -66,7 +68,7 @@
                         [else
                          ;(printf "α = ~v~n~n" (- (flvector-ref ws i1) (flvector-ref ws i0)))
                          (define a (safe-vector-ref xs i0))
-                         (define b (vector-ref xs i1))
+                         (define b (safe-vector-ref xs i1))
                          (define d (abs (metric b a)))
                          (cond [(d . < . d*)  (loop (+ i0 1) i1 a b d)]
                                [else          (loop (+ i0 1) i1 a* b* d*)])]))]))])))
