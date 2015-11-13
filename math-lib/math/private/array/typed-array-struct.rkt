@@ -95,6 +95,38 @@
     ((Array-strict! arr))
     (set-box! strict? #t)))
 
+(: safe-build-array (All (A) (~> ([vs : Indexes]
+                                   [ f : ((Refine [ds : Indexes] (= (len vs) (len ds))) -> A)])
+                                   (Array A))))
+(define (safe-build-array ds f)
+  ;; This box's contents get replaced when the array we're constructing is made strict, so that
+  ;; the array stops referencing f. If we didn't do this, long chains of array computations would
+  ;; keep hold of references to all the intermediate procs, which is a memory leak.
+  (let ([f  (box f)])
+    (define size (check-array-shape-size 'safe-build-array ds))
+    ;; Sharp readers might notice that strict! doesn't check to see whether the array is already
+    ;; strict; that's okay - array-strict! does it instead, which makes the "once strict, always
+    ;; strict" invariant easier to ensure in subtypes, which we don't always have control over
+    (define (strict!)
+      (let* ([old-f  (unbox f)]
+             [vs     (inline-build-array-data
+                      ds
+                      (λ (js j) (old-f (if (= (vector-length ds)
+                                              (vector-length js))
+                                           js
+                                           (error 'safe-build-array "uneq in old-f"))))
+                      A)])
+        ;; Make a new f that just indexes into vs
+        ; <nope> Requires a change to the input types of set-box!
+        (set-box! f (λ: ([js : Indexes])
+                      (unsafe-vector-ref vs (unsafe-array-index->value-index ds js))))))
+    (define unsafe-proc
+      (λ: ([js : Indexes]) ((unbox f) (if (= (vector-length ds)
+                                             (vector-length js))
+                                          js
+                                          (error 'safe-build-array "uneq in unsafe-proc")))))
+    (Array ds size ((inst box Boolean) #f) strict! unsafe-proc)))
+
 (: unsafe-build-array (All (A) (Indexes (Indexes -> A) -> (Array A))))
 (define (unsafe-build-array ds f)
   ;; This box's contents get replaced when the array we're constructing is made strict, so that

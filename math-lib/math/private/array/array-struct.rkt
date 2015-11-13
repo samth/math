@@ -40,6 +40,7 @@
  list->array
  make-unsafe-array-proc
  unsafe-build-array
+ safe-build-array
  unsafe-build-simple-array
  unsafe-list->array
  unsafe-array-proc
