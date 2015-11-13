@@ -26,7 +26,7 @@ otherwise
                             [lt? : (A A -> Any)])
                            (Refine [res : Fixnum] (<= start res) (<= res end)))))
 (define (partition! vs start end lt?)
-  ; <nope> The types of start and end are not consistent.
+  ; <changed>
   (let ([p : (Refine [d : Natural] (= d (+ (* -1 start) end)))
            (assert (- end start) exact-nonnegative-integer?)])
     (let ([p : (Refine [a : Natural] (<= 0 a) (< a p))

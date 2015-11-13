@@ -96,8 +96,8 @@
     (set-box! strict? #t)))
 
 (: safe-build-array (All (A) (~> ([vs : Indexes]
-                                   [ f : ((Refine [ds : Indexes] (= (len vs) (len ds))) -> A)])
-                                   (Array A))))
+                                  [ f : ((Refine [ds : Indexes] (= (len vs) (len ds))) -> A)])
+                                 (Array A))))
 (define (safe-build-array ds f)
   ;; This box's contents get replaced when the array we're constructing is made strict, so that
   ;; the array stops referencing f. If we didn't do this, long chains of array computations would

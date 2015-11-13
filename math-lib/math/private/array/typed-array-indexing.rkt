@@ -267,39 +267,37 @@
 
 (: unsafe-array-axis-transform (All (A) ((Array A) (Vectorof (Vectorof Index)) -> (Array A))))
 (define (unsafe-array-axis-transform arr old-jss)
-  (define: new-ds : Indexes (vector-map vector-length old-jss))
+  (define: new-ds : (Refine [v : Indexes] (= (len v) (len old-jss)))
+    (vector-map vector-length old-jss))
   (define dims (vector-length new-ds))
-  (case dims
-    [(0)  arr]
-    [(1)  (define g (unsafe-array-proc arr))
-          ; <nope> Vector accesses for js require a change to the input type of unsafe-build-array
-          (unsafe-build-array
-           new-ds
-           (λ: ([js : Indexes])
-             (cond
-               [(> (vector-length js) 0)
-                (define j0 (safe-vector-ref js 0))
-                (safe-vector-set! js 0 (unsafe-vector-ref (unsafe-vector-ref old-jss 0) j0))
-                (define v (g js))
-                (safe-vector-set! js 0 j0)
-                v]
-               [else (error 'unsafe-build-array "internal error")])))]
-    [(2)  (define g (unsafe-array-proc arr))
-          ; <nope> Vector accesses for js require a change to the input type of unsafe-build-array
-          (unsafe-build-array
-           new-ds
-           (λ: ([js : Indexes])
-             (cond
-               [(> (vector-length js) 1)
-                (define j0 (safe-vector-ref js 0))
-                (define j1 (safe-vector-ref js 1))
-                (safe-vector-set! js 0 (unsafe-vector-ref (unsafe-vector-ref old-jss 0) j0))
-                (safe-vector-set! js 1 (unsafe-vector-ref (unsafe-vector-ref old-jss 1) j1))
-                (define v (g js))
-                (safe-vector-set! js 0 j0)
-                (safe-vector-set! js 1 j1)
-                v]
-               [else (error 'unsafe-build-array "internal error")])))]
+  (cond 
+    [(= 0 dims)
+     arr]
+    [(= 1 dims)
+     (define g (unsafe-array-proc arr))
+     ; <changed>
+     (safe-build-array
+      new-ds
+      (λ: ([js : (Refine [v : Indexes] (= (len v) (len new-ds)))])
+        (define j0 (safe-vector-ref js 0))
+        (safe-vector-set! js 0 (unsafe-vector-ref (safe-vector-ref old-jss 0) j0))
+        (define v (g js))
+        (safe-vector-set! js 0 j0)
+        v))]
+    [(= 2 dims)
+     (define g (unsafe-array-proc arr))
+     ; <changed>
+     (safe-build-array
+      new-ds
+      (λ: ([js : (Refine [v : Indexes] (= (len v) (len new-ds)))])
+        (define j0 (safe-vector-ref js 0))
+        (define j1 (safe-vector-ref js 1))
+        (safe-vector-set! js 0 (unsafe-vector-ref (safe-vector-ref old-jss 0) j0))
+        (safe-vector-set! js 1 (unsafe-vector-ref (safe-vector-ref old-jss 1) j1))
+        (define v (g js))
+        (safe-vector-set! js 0 j0)
+        (safe-vector-set! js 1 j1)
+        v))]
     [else
      (define old-js (make-thread-local-indexes dims))
      (unsafe-array-transform
