@@ -76,7 +76,7 @@
 (define (submatrix a row-range col-range)
   (array-slice-ref (ensure-matrix 'submatrix a) (list row-range col-range)))
 
-;; <nope> requires change to the type of unsafe-build-array
+;; <changed> requires change to the type of unsafe-build-array
 (: matrix-row (All (A) (Matrix A) Integer -> (Matrix A)))
 (define (matrix-row a i)
   (define-values (m n) (matrix-shape a))
@@ -84,16 +84,19 @@
          (raise-argument-error 'matrix-row (format "Index < ~a" m) 1 a i)]
         [else
          (define proc (unsafe-array-proc a))
+         (define ds : (Refine [v : (Vectorof Index)] (= 2 (len v)))
+           (build-vector 2 (λ ([i : Index]) : Index
+                              (list-ref (list 1 n) i))))
          (array-default-strict
-          (unsafe-build-array
-           ((inst vector Index) 1 n)
-           (λ: ([ij : Indexes])
-             (unsafe-vector-set! ij 0 i)
+          (safe-build-array
+           ds
+           (λ: ([ij : (Refine [v : Indexes] (= (len ds) (len v)))])
+             (safe-vector-set! ij 0 i)
              (define res (proc ij))
-             (unsafe-vector-set! ij 0 0)
+             (safe-vector-set! ij 0 0)
              res)))]))
 
-;; <nope> requires change to the type of unsafe-build-array
+;; <changed> requires change to the type of unsafe-build-array
 (: matrix-col (All (A) (Matrix A) Integer -> (Matrix A)))
 (define (matrix-col a j)
   (define-values (m n) (matrix-shape a))
@@ -102,9 +105,10 @@
         [else
          (define proc (unsafe-array-proc a))
          (array-default-strict
-          (unsafe-build-array
-           ((inst vector Index) m 1)
-           (λ: ([ij : Indexes])
+          (safe-build-array
+           (ann ((inst make-vector Index) 1 m)
+                (Refine [v : (Vectorof Index)] (= 1 (len v))))
+           (λ: ([ij : (Refine [v : Indexes] (= (len v) 1))])
              (unsafe-vector-set! ij 1 j)
              (define res (proc ij))
              (unsafe-vector-set! ij 1 0)
@@ -122,19 +126,20 @@
        (parameterize ([array-strictness #f])
          (array->array-list (array-axis-insert (ensure-matrix 'matrix-cols a) 2) 1))))
 
-;; <nope> requires change to type of unsafe-build-array
+;; <changed>
 (: matrix-diagonal (All (A) ((Matrix A) -> (Array A))))
 (define (matrix-diagonal a)
   (define-values (m n) (matrix-shape a))
   (define proc (unsafe-array-proc a))
   (array-default-strict
-   (unsafe-build-array
-    ((inst vector Index) (fxmin m n))
-    (λ: ([js : Indexes])
-      (define i (unsafe-vector-ref js 0))
+   (safe-build-array
+    (ann ((inst make-vector Index) 1 (min m n))
+         (Refine [v : (Vectorof Index)] (= 1 (len v))))
+    (λ: ([js : (Refine [v : Indexes] (= (len v) 1))])
+      (define i (safe-vector-ref js 0))
       (proc ((inst vector Index) i i))))))
 
-;; <nope> requires change to type of unsafe-build-array
+;; <changed> requires change to type of unsafe-build-array
 (: matrix-upper-triangle (All (A) (case-> ((Matrix A) -> (Matrix (U A 0)))
                                           ((Matrix A) A -> (Matrix A)))))
 (define matrix-upper-triangle
@@ -144,14 +149,16 @@
      (define-values (m n) (matrix-shape M))
      (define proc (unsafe-array-proc M))
      (array-default-strict
-      (unsafe-build-array
-       ((inst vector Index) m n)
-       (λ: ([ij : Indexes])
-         (define i (unsafe-vector-ref ij 0))
-         (define j (unsafe-vector-ref ij 1))
+      (safe-build-array
+       (ann (build-vector 2 (λ ([i : Index]) : Index
+                               (list-ref (list m n) i)))
+            (Refine [v : (Vectorof Index)] (= 2 (len v))))
+       (λ: ([ij : (Refine [v : (Vectorof Index)] (= 2 (len v)))])
+         (define i (safe-vector-ref ij 0))
+         (define j (safe-vector-ref ij 1))
          (if (i . fx<= . j) (proc ij) zero))))]))
 
-;; <nope> requires change to type of unsafe-build-array
+;; <changed> requires change to type of unsafe-build-array
 (: matrix-lower-triangle (All (A) (case-> ((Matrix A) -> (Matrix (U A 0)))
                                           ((Matrix A) A -> (Matrix A)))))
 (define matrix-lower-triangle
@@ -161,11 +168,13 @@
      (define-values (m n) (matrix-shape M))
      (define proc (unsafe-array-proc M))
      (array-default-strict
-      (unsafe-build-array
-       ((inst vector Index) m n)
-       (λ: ([ij : Indexes])
-         (define i (unsafe-vector-ref ij 0))
-         (define j (unsafe-vector-ref ij 1))
+      (safe-build-array
+       (ann (build-vector 2 (λ ([i : Index]) : Index
+                               (list-ref (list m n) i)))
+            (Refine [v : (Vectorof Index)] (= 2 (len v))))
+       (λ: ([ij : (Refine [v : (Vectorof Index)] (= 2 (len v)))])
+         (define i (safe-vector-ref ij 0))
+         (define j (safe-vector-ref ij 1))
          (if (i . fx>= . j) (proc ij) zero))))]))
 
 ;; ===================================================================================================
@@ -290,7 +299,8 @@
      (define bproc (unsafe-array-proc b))
      (parameterize ([array-strictness #f])
        (array-all-sum
-        (unsafe-build-array
+        ;; amk: changing to safe-build-array seems like no win
+        (safe-build-array
          ((inst vector Index) m n)
          (λ: ([js : Indexes])
            (* (aproc js) (conjugate (bproc js)))))))]))
