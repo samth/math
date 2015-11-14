@@ -28,8 +28,8 @@
     (define dk (unsafe-vector-ref ds k))
     (define new-ds (unsafe-vector-remove ds k))
     (define proc (unsafe-array-proc arr))
-    (unsafe-build-array
-     new-ds (λ: ([js : Indexes])
+    (safe-build-array
+     new-ds (λ: ([js : (Refine [v : Indexes] (= (len v) (len new-ds)))])
               (define old-js (unsafe-vector-insert js k 0))
               (f dk (λ: ([jk : Index])
                       ; <nope> old-js build using both unsafe-vector-insert and unsafe-build-array

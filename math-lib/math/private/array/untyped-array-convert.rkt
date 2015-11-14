@@ -110,7 +110,7 @@
             [ds  (let ([ds  (check-array-shape ds raise-shape-error)])
                    (define dims (vector-length ds))
                    (array->mutable-array
-                     ; <nope> We need to be able to change the input type of unsafe-build-array.
+                     ; <nope> We can't use  unsafe-build-array.in an untyped module
                     (unsafe-build-array
                      ds (λ: ([js : Indexes])
                           (let: loop : A ([i : Nonnegative-Fixnum  0] [vec : (Vectorof* A)  vec])

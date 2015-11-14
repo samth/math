@@ -176,7 +176,7 @@
 (: safe-vector-remove (All (I) (~> ([vec : (Vectorof I)]
                                     [k : (Refine [k : Index]
                                                  (< k (len vec)))])
-                                   (Vectorof I))))
+                                   (Refine [v : (Vectorof I)] (= (len v) (+ -1 (len vec)))))))
 (define (safe-vector-remove vec k)
   (define n (vector-length vec))
   (define n-1 (sub1 n))
