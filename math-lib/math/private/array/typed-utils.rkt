@@ -218,9 +218,9 @@
 ; <refined> Safe insert function
 (: safe-vector-insert (All (I) (~> ([vec : (Vectorof I)]
                                     [k : (Refine [k : Index]
-                                                 (< k (len vec)))]
+                                                 (<= k (len vec)))]
                                     [v : I])
-                                   (Vectorof I))))
+                                   (Refine [v : (Vectorof I)] (= (len v) (+ 1 (len vec))) ))))
 (define (safe-vector-insert vec k v)
   (define n (vector-length vec))
   (define dst-vec : (Refine [dst-vec : (Vectorof I)]
@@ -237,7 +237,10 @@
   dst-vec)
 
 ; <refined-local> Internal refinement on dst-vec added.
-(: unsafe-vector-insert (All (I) ((Vectorof I) Index I -> (Vectorof I))))
+(: unsafe-vector-insert (All (I) (~> ([vec : (Vectorof I)]
+                                      [k : Index]
+                                      [v : I])
+                                     (Refine [v : (Vectorof I)] (= (len v) (+ 1 (len vec))) ))))
 (define (unsafe-vector-insert vec k v)
   (define n (vector-length vec))
   (define dst-vec : (Refine [dst-vec : (Vectorof I)]

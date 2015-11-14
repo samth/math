@@ -34,15 +34,18 @@
       (define bx (make-thread-local-box (unsafe-vector-ref arr-data 0)))
       (values m p n arr-data brr-data bx)))
 
-  ;; <nope> Requires a change in the type of unsafe-build-array
+  ;; <changed>
   (: make-matrix-multiply (All (A) (Index Index Index (Index Index -> A) -> (Matrix A))))
   (define (make-matrix-multiply m p n sum-loop)
     (array-default-strict
-     (unsafe-build-array
-      ((inst vector Index) m n)
-      (λ: ([ij : Indexes])
-        (sum-loop (assert (fx* (unsafe-vector-ref ij 0) p) index?)
-                  (assert (fx* (unsafe-vector-ref ij 1) p) index?))))))
+     (safe-build-array
+      (ann
+       (build-vector 2 (λ ([i : Index]) : Index
+                         (list-ref (list m n) i)))
+       (Refine [v : Indexes] (= 2 (len v))))
+      (λ: ([ij : (Refine [v : Indexes] (= 2 (len v)))])
+        (sum-loop (assert (fx* (safe-vector-ref ij 0) p) index?)
+                  (assert (fx* (safe-vector-ref ij 1) p) index?))))))
   )  ; module
 
 (module untyped-multiply-defs racket/base

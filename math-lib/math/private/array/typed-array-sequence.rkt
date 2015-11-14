@@ -100,13 +100,13 @@
   (cond [(and (0 . <= . k) (k . <= . dims))
          (let ([arrs  (list->vector (map (λ: ([arr : (Array A)]) (array-broadcast arr ds)) arrs))])
            (define dk (vector-length arrs))
-           (define new-ds (unsafe-vector-insert ds k dk))
+           (define new-ds (safe-vector-insert ds k dk))
            (array-default-strict
-            ; <nope> Vector accesses into js require change to the input type of unsafe-build-array
-            (unsafe-build-array
-             new-ds (λ: ([js : Indexes])
-                      (define jk (unsafe-vector-ref js k))
-                      (let ([old-js  (unsafe-vector-remove js k)])
+            ; <changed> Vector accesses into js require change to the input type of unsafe-build-array
+            (safe-build-array
+             new-ds (λ: ([js : (Refine [v : Indexes] (= (len new-ds) (len v)))])
+                      (define jk (safe-vector-ref js k))
+                      (let ([old-js  (safe-vector-remove js k)])
                         ((unsafe-array-proc (unsafe-vector-ref arrs jk)) old-js))))))]
         [else
          (error 'array-list->array (format "expected axis Index <= ~e; given ~e" dims k))]))

@@ -77,7 +77,7 @@
                            (if (dk . > . 1) (values k dk) (loop (fx+ k 1)))]
           [else  (values 0 0)])))
 
-;; <nope> vector-ref requires change to unsafe-build-array for safe ops.
+;; <changed> vector-ref requires change to unsafe-build-array for safe ops.
 ;; vector-set! requires jumping through hoops with regard to the type of js.
 (: array->col-matrix (All (A) ((Array A) -> (Matrix A))))
 (define (array->col-matrix arr)
@@ -99,11 +99,11 @@
          (define js (make-thread-local-indexes dims))
          (define proc (unsafe-array-proc arr))
          (array-default-strict
-          (unsafe-build-array ((inst vector Index) m 1)
-                              (λ: ([ij : Indexes])
-                                (let ([js  (js)])
-                                  (unsafe-vector-set! js k (unsafe-vector-ref ij 0))
-                                  (proc js)))))]
+          (safe-build-array ((inst make-vector Index) 1 m)
+                            (λ: ([ij : (Refine [v : Indexes] (= 1 (len v)))])
+                              (let ([js  (js)])
+                                (unsafe-vector-set! js k (safe-vector-ref ij 0))
+                                (proc js)))))]
         [else  (fail)]))
 
 (: ->col-matrix (All (A) ((U (Listof A) (Vectorof A) (Array A)) -> (Matrix A))))

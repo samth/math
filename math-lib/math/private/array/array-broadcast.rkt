@@ -27,18 +27,18 @@
                           arr new-ds)])))
   (define old-js (make-thread-local-indexes old-dims))
   (define old-f (unsafe-array-proc arr))
-  (unsafe-build-array
+  (safe-build-array
    new-ds
-   (λ: ([new-js : Indexes])
+   (λ: ([new-js : (Refine [v : Indexes] (= (len v) (len new-ds)))])
      (let ([old-js  (old-js)])
        (let: loop : A ([k : Nonnegative-Fixnum  0])
          (cond [(k . < . old-dims)
-                ; <nope> don't have type information about new-js, specifically its length.
-                (define new-jk (unsafe-vector-ref new-js (+ k shift)))
+                ; <changed> don't have type information about new-js, specifically its length.
+                (define new-jk (safe-vector-ref new-js (+ k shift)))
                 (define old-dk (safe-vector-ref old-ds k))
                 (define old-jk (unsafe-fxmodulo new-jk old-dk))
-                ; <nope> old-js defined as a thunk, so its length is obscured.
-                (unsafe-vector-set! old-js k old-jk)
+                ; <changed> old-js defined as a thunk, so its length is obscured.
+                (safe-vector-set! old-js k old-jk)
                 (loop (+ k 1))]
                [else  (old-f old-js)]))))))
 

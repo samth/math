@@ -10,7 +10,7 @@
 
 (provide matrix-expt)
 
-;; <nope> Requires a change in the type of unsafe-build-array
+;; <changed> <nope-struct> 
 (: matrix-expt/ns (case-> ((Matrix Flonum) Positive-Integer -> (Matrix Flonum))
                           ((Matrix Real) Positive-Integer -> (Matrix Real))
                           ((Matrix Float-Complex) Positive-Integer -> (Matrix Float-Complex))
