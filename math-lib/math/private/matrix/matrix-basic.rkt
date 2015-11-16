@@ -106,12 +106,13 @@
          (define proc (unsafe-array-proc a))
          (array-default-strict
           (safe-build-array
-           (ann ((inst make-vector Index) 1 m)
-                (Refine [v : (Vectorof Index)] (= 1 (len v))))
-           (λ: ([ij : (Refine [v : Indexes] (= (len v) 1))])
-             (unsafe-vector-set! ij 1 j)
+           (ann (build-vector 2 (λ ([i : Index]) : Index
+                                  (list-ref (list 1 m) i)))
+                (Refine [v : (Vectorof Index)] (= 2 (len v))))
+           (λ: ([ij : (Refine [v : Indexes] (= (len v) 2))])
+             (safe-vector-set! ij 1 j)
              (define res (proc ij))
-             (unsafe-vector-set! ij 1 0)
+             (safe-vector-set! ij 1 0)
              res)))]))
 
 (: matrix-rows (All (A) (Matrix A) -> (Listof (Matrix A))))
