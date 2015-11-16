@@ -22,26 +22,15 @@
   (cond [(real? x)  (sqr x)]
         [else  (abs (real-part (* x (conjugate x))))]))
 
-;; <refined> Safe version of vector-swap!
-(: safe-vector-swap! (All (A)
-                  (~> ([vec : (Vectorof A)]
-                       [i0 : (Refine [i0 : Integer]
-                             (< -1 i0 (len vec)))]
-                       [i1 : (Refine [i1 : Integer]
-                             (< -1 i1 (len vec)))])
-                      Void)))
-(define (safe-vector-swap! vs i0 i1)
-  (unless (= i0 i1)
-    (define tmp (safe-vector-ref vs i0))
-    (safe-vector-set! vs i0 (safe-vector-ref vs i1))
-    (safe-vector-set! vs i1 tmp)))
-
 (: vector-swap! (All (A) ((Vectorof A) Integer Integer -> Void)))
 (define (vector-swap! vs i0 i1)
   (unless (= i0 i1)
-    (define tmp (unsafe-vector-ref vs i0))
-    (unsafe-vector-set! vs i0 (unsafe-vector-ref vs i1))
-    (unsafe-vector-set! vs i1 tmp)))
+    (if (and (< -1 i0 (vector-length vs))
+             (< -1 i1 (vector-length vs)))
+        (let ([tmp (safe-vector-ref vs i0)])
+          (safe-vector-set! vs i0 (safe-vector-ref vs i1))
+          (safe-vector-set! vs i1 tmp))
+        (error 'bound-error))))
 
 (define-syntax-rule (vector-generic-scale! vs-expr v-expr *)
   (let* ([vs  vs-expr]

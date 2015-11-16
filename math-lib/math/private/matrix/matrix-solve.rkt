@@ -48,8 +48,8 @@
                                             ((Matrix Float-Complex) -> Float-Complex)
                                             ((Matrix Number) -> Number)))
 (define (matrix-determinant/row-reduction M)
-  (define m (square-matrix-size M))
   (define rows (matrix->vector* M))
+  (define m (square-matrix-size M))
   (let loop ([#{i : Nonnegative-Fixnum} 0] [#{sign : (U Positive-Fixnum Negative-Fixnum)} 1])
     (cond
       [(i . fx< . m)

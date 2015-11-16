@@ -312,7 +312,6 @@
                    ; I believe this is the case, but we cannot annotate new-ds to say this without changing the type
                    ; of vector-map.
                    (define old-ji (unsafe-vector-ref (unsafe-vector-ref old-jss i) new-ji))
-                   ; <nope> old-js is defined as a output function, so annotating it is difficult.
                    (safe-vector-set! old-js i old-ji)
                    (loop (+ i 1))]
                   [else  old-js])))))]))
