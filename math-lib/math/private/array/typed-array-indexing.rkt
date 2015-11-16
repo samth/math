@@ -313,7 +313,7 @@
                    ; of vector-map.
                    (define old-ji (unsafe-vector-ref (unsafe-vector-ref old-jss i) new-ji))
                    ; <nope> old-js is defined as a output function, so annotating it is difficult.
-                   (unsafe-vector-set! old-js i old-ji)
+                   (safe-vector-set! old-js i old-ji)
                    (loop (+ i 1))]
                   [else  old-js])))))]))
 
