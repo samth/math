@@ -210,30 +210,31 @@
       [else
        (define dss (map (λ: ([arr : (Array A)]) (array-shape arr)) arrs))
        (define new-ds (vector-copy-all (car dss)))
-       ; <nope> We have no information about new-ds.
-       (unsafe-vector-set! new-ds k new-dk)
-       ;; Make two mappings:
-       ;; 1. old-procs : new array index -> old array procedure
-       ;; 2. old-jks :   new array index -> old array index
-       (define old-procs (make-vector new-dk (unsafe-array-proc (car arrs))))
-       (define: old-jks : Indexes (make-vector new-dk 0))
-       (let arrs-loop ([arrs arrs] [dks dks] [#{jk : Nonnegative-Fixnum} 0])
-         (unless (null? arrs)
-           (define arr (car arrs))
-           (define proc (unsafe-array-proc arr))
-           (define dk (car dks))
-           (let i-loop ([#{i : Nonnegative-Fixnum} 0] [#{jk : Nonnegative-Fixnum} jk])
-             ; <nope> No indication of the size of the vectors in relation to jk
-             (cond [(i . < . dk)  (unsafe-vector-set! old-procs jk proc)
-                                  (unsafe-vector-set! old-jks jk i)
-                                  (i-loop (+ i 1) (unsafe-fx+ jk 1))]
-                   [else  (arrs-loop (cdr arrs) (cdr dks) jk)]))))
-       (array-default-strict
-        ; <nope> we know nothing about k it seems
-        (safe-build-array
-         new-ds (λ: ([js : (Refine [v : Indexes] (= (len v) (len new-ds)))])
-                  (define jk (unsafe-vector-ref js k))
-                  (unsafe-vector-set! js k (unsafe-vector-ref old-jks jk))
-                  (define v ((unsafe-vector-ref old-procs jk) js))
-                  (unsafe-vector-set! js k jk)
-                  v)))])))
+       (if (< -1 k (vector-length new-ds))
+           (let ([k k])
+             (safe-vector-set! new-ds k new-dk)
+             ;; Make two mappings:
+             ;; 1. old-procs : new array index -> old array procedure
+             ;; 2. old-jks :   new array index -> old array index
+             (define old-procs (make-vector new-dk (unsafe-array-proc (car arrs))))
+             (define: old-jks : Indexes (make-vector new-dk 0))
+             (let arrs-loop ([arrs arrs] [dks dks] [#{jk : Nonnegative-Fixnum} 0])
+               (unless (null? arrs)
+                 (define arr (car arrs))
+                 (define proc (unsafe-array-proc arr))
+                 (define dk (car dks))
+                 (let i-loop ([#{i : Nonnegative-Fixnum} 0] [#{jk : Nonnegative-Fixnum} jk])
+                   ; <nope> No indication of the size of the vectors in relation to jk
+                   (cond [(i . < . dk)  (unsafe-vector-set! old-procs jk proc)
+                                        (unsafe-vector-set! old-jks jk i)
+                                        (i-loop (+ i 1) (unsafe-fx+ jk 1))]
+                         [else  (arrs-loop (cdr arrs) (cdr dks) jk)]))))
+             (array-default-strict
+              (safe-build-array
+               new-ds (λ: ([js : (Refine [v : Indexes] (= (len v) (len new-ds)))])
+                        (define jk (safe-vector-ref js k))
+                        (safe-vector-set! js k (unsafe-vector-ref old-jks jk))
+                        (define v ((unsafe-vector-ref old-procs jk) js))
+                        (safe-vector-set! js k jk)
+                        v))))
+           (error 'unbound-k))])))
