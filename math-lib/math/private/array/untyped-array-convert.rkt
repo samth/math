@@ -3,6 +3,7 @@
 (require racket/unsafe/ops
          typed/safe/ops
          typed/racket/base
+         racket/list
          "array-struct.rkt"
          "mutable-array.rkt"
          "utils.rkt")
@@ -71,19 +72,21 @@
                                                 ((Listof* A) -> Any : A)
                                                 -> (Vectorof A))))
     (define (list*->flat-vector lst size A?)
-     (cond [(< size 0) (error 'list*->flat-vector "internal error")]
-           [(= size 0)  (vector)]
+      (cond [(< size 0) (error 'list*->flat-vector "internal error")]
+            [(= size 0)  (vector)]
             [else
              (define vec : (Refine [v : (Vectorof A)] (= size (len v)))
                (make-vector size (first* lst A?)))
              (let: loop : (Refine [j : Nonnegative-Fixnum] (<= j (len vec)))
                ([lst : (Listof* A)  lst]
                 [i : (Refine [j : Nonnegative-Fixnum] (<= j (len vec))) 0])
-               (cond [(= i size) size]
+               (cond [(or (= i size)
+                          (null? lst)) i]
                      [(A? lst) (safe-vector-set! vec i lst)
                                (unsafe-fx+ 1 i)]
-                     [(pair? lst) (loop (cdr lst) (loop (car lst) i))]
-                     [else  i]))
+                     [(pair? lst)
+                      (loop (cdr lst) (loop (car lst) i))]
+                     [else i]))
              vec]))
     
     (: list*->array (All (A) ((Listof* A) ((Listof* A) -> Any : A) -> (Array A))))
@@ -94,7 +97,7 @@
       
       (define ds (list-shape lst pred?))
       (cond [(pred? lst)  (unsafe-build-simple-array #() (λ (js) lst))]
-            [ds  (let ([ds  (check-array-shape ds raise-shape-error)])
+            [ds  (let ([ds (check-array-shape ds raise-shape-error)])
                    (define size (array-shape-size ds))
                    (unsafe-vector->array ds (list*->flat-vector lst size pred?)))]
             [else  (raise-shape-error)]))

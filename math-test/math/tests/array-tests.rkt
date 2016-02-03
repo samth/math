@@ -2,22 +2,12 @@
 
 (require racket/flonum
          math/array
-         (rename-in
-          (except-in typed/rackunit check-eq?)
-          [check-equal?  old:check-equal?])
-         math/private/array/utils)
+         math/private/array/utils
+         "t-unit/main.rkt") 
 
 (define-predicate listof-index? (Listof Index))
 (define-predicate listof-flonum? (Listof Float))
 (define-predicate undefined? Undefined)
-
-;; This gets around the fact that typed/rackunit can no longer test higher-order values for equality,
-;; since TR has firmed up its rules on passing `Any' types in and out of untyped code
-(define-syntax-rule (check-equal? a b . message)
-  (check-true (equal? a b) . message))
-
-(define-syntax-rule (check-eq? a b . message)
-  (check-equal? (eq-hash-code a) (eq-hash-code b) . message))
 
 (define-syntax-rule (array-axis-andmap arr k pred?)
   (array-axis-and (array-map pred? arr) k))
@@ -904,11 +894,11 @@
 
 (let ([arr  (indexes-array #(4 5))])
   (check-equal? (for/list: : (Listof (Listof Indexes)) ([brr  (in-array-axis arr 0)])
-                  (for/list: : (Listof Indexes) ([js  (in-array brr)])
+                  (for/list: : (Listof Indexes) ([js : Indexes (in-array brr)])
                     js))
                 (array->list* arr))
   (check-equal? (for/list: : (Listof (Listof Indexes)) ([brr  (in-array-axis arr 1)])
-                  (for/list: : (Listof Indexes) ([js  (in-array brr)])
+                  (for/list: : (Listof Indexes) ([js : Indexes (in-array brr)])
                     js))
                 (array->list* (array-axis-swap arr 0 1))))
 
@@ -1007,3 +997,6 @@
 
 (check-equal? (array-lazy (array-axis-swap (indexes-array #(4 4)) 0 1))
               (array-axis-swap (indexes-array #(4 4)) 0 1))
+
+
+(display-test-results)
