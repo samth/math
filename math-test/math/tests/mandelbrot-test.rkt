@@ -22,21 +22,24 @@
   divtime)
 
 (define truth
-  (array #[#[0 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
-           #[1 1 1 1 1 1 2 2 2 3 2 2 1 1 1]
-           #[1 1 1 1 1 2 2 2 3 6 20 3 2 1 1]
-           #[1 1 1 2 2 2 3 4 5 20 17 4 3 2 1]
-           #[1 1 2 2 3 3 4 11 20 20 20 10 14 2 2]
-           #[1 2 3 4 6 6 6 20 20 20 20 20 9 3 2]
-           #[2 3 4 6 18 20 14 20 20 20 20 20 20 3 2]
-           #[20 20 20 20 20 20 20 20 20 20 20 20 5 3 2]
-           #[2 3 4 6 18 20 14 20 20 20 20 20 20 3 2]
-           #[1 2 3 4 6 6 6 20 20 20 20 20 9 3 2]
-           #[1 1 2 2 3 3 4 11 20 20 20 10 14 2 2]
-           #[1 1 1 2 2 2 3 4 5 20 17 4 3 2 1]
-           #[1 1 1 1 1 2 2 2 3 6 20 3 2 1 1]
-           #[1 1 1 1 1 1 2 2 2 3 2 2 1 1 1]
-           #[0 1 1 1 1 1 1 1 1 1 1 1 1 1 1]]))
+  (list*->array
+   (ann (list (ann (list 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1) (Listof Integer))
+              (ann (list 1 1 1 1 1 1 2 2 2 3 2 2 1 1 1) (Listof Integer))
+              (ann (list 1 1 1 1 1 2 2 2 3 6 20 3 2 1 1) (Listof Integer))
+              (ann (list 1 1 1 2 2 2 3 4 5 20 17 4 3 2 1) (Listof Integer))
+              (ann (list 1 1 2 2 3 3 4 11 20 20 20 10 14 2 2) (Listof Integer))
+              (ann (list 1 2 3 4 6 6 6 20 20 20 20 20 9 3 2) (Listof Integer))
+              (ann (list 2 3 4 6 18 20 14 20 20 20 20 20 20 3 2) (Listof Integer))
+              (ann (list 20 20 20 20 20 20 20 20 20 20 20 20 5 3 2) (Listof Integer))
+              (ann (list 2 3 4 6 18 20 14 20 20 20 20 20 20 3 2) (Listof Integer))
+              (ann (list 1 2 3 4 6 6 6 20 20 20 20 20 9 3 2) (Listof Integer))
+              (ann (list 1 1 2 2 3 3 4 11 20 20 20 10 14 2 2) (Listof Integer))
+              (ann (list 1 1 1 2 2 2 3 4 5 20 17 4 3 2 1) (Listof Integer))
+              (ann (list 1 1 1 1 1 2 2 2 3 6 20 3 2 1 1) (Listof Integer))
+              (ann (list 1 1 1 1 1 1 2 2 2 3 2 2 1 1 1) (Listof Integer))
+              (ann (list 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1) (Listof Integer)))
+        (Listof (Listof Integer)))
+   exact-integer?))
 
 (check-true
  (equal? (mandelbrot 0.2 20)
