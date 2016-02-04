@@ -195,7 +195,7 @@
          (cond [(integer? s)
                 (when (or (s . < . 0) (s . >= . dk))
                   (error name "expected Index < ~e in slice ~e (axis ~e)" dk s k))
-                (values (array-axis-ref arr k s) jss)]
+                (loop rst-slices (unsafe-fx- k 1) (array-axis-ref arr k s) jss)]
                [(slice? s)
                 (loop rst-slices
                       (unsafe-fx- k 1)
