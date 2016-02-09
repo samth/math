@@ -30,7 +30,7 @@
                         (if (vector-zero? vs) (loop (fx+ i 1)) i)]
                        [else  #f]))]))
 
-; <refined> Safe version of subtract-projections! that requires knowledge about m with respect to rows.
+; <refined-local> Safe version of subtract-projections! that requires knowledge about m with respect to rows.
 (: safe-subtract-projections!
    (case-> (~> ([rows : (Vectorof (Vectorof Flonum))]
                 [i : Nonnegative-Fixnum]
@@ -52,18 +52,6 @@
   (let loop ([#{i : Nonnegative-Fixnum} i])
     (when (i . fx< . m)
       (vector-sub-proj! (safe-vector-ref rows i) row #f)
-      (loop (fx+ i 1)))))
-
-(: subtract-projections!
-   (case-> ((Vectorof (Vectorof Flonum)) Nonnegative-Fixnum Index (Vectorof Flonum) -> Void)
-           ((Vectorof (Vectorof Real)) Nonnegative-Fixnum Index (Vectorof Real) -> Void)
-           ((Vectorof (Vectorof Float-Complex)) Nonnegative-Fixnum Index (Vectorof Float-Complex)
-                                                -> Void)
-           ((Vectorof (Vectorof Number)) Nonnegative-Fixnum Index (Vectorof Number) -> Void)))
-(define (subtract-projections! rows i m row)
-  (let loop ([#{i : Nonnegative-Fixnum} i])
-    (when (i . fx< . m)
-      (vector-sub-proj! (unsafe-vector-ref rows i) row #f)
       (loop (fx+ i 1)))))
 
 (: matrix-gram-schmidt/ns (case-> ((Matrix Flonum) Any Integer -> (Array Flonum))

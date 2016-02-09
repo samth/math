@@ -81,7 +81,7 @@
              (define ji (safe-vector-ref js i))
              (loop (+ i 1) (unsafe-fx+ ji (unsafe-fx* di j)))]
             [else  j])))
-  
+
   (: unsafe-array-index->value-index (Indexes Indexes -> Nonnegative-Fixnum))
   (define (unsafe-array-index->value-index ds js)
     (define dims (vector-length ds))

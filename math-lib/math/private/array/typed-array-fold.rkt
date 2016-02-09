@@ -37,21 +37,6 @@
                       (unsafe-vector-set! old-js k jk)
                       (proc old-js)))))))
 
-(: safe-array-axis-reduce (All (A B) ((Array A) Index (Index (Index -> A) -> B) -> (Array B))))
-(begin-encourage-inline
-  (define (safe-array-axis-reduce arr k f)
-    (define ds (array-shape arr))
-    ; <nope> Need to be able to reason about the length of a vector built out of an array.
-    (define dk (unsafe-vector-ref ds k))
-    (define new-ds (unsafe-vector-remove ds k))
-    (define proc (unsafe-array-proc arr))
-    (unsafe-build-array
-     new-ds (λ: ([js : Indexes])
-              (define old-js (unsafe-vector-insert js k 0))
-              (f dk (λ: ([jk : Index])
-                      (unsafe-vector-set! old-js k jk)
-                      (proc old-js)))))))
-
 (: array-axis-reduce (All (A B) ((Array A) Integer (Index (Integer -> A) -> B) -> (Array B))))
 (define (array-axis-reduce arr k f)
   (let ([k  (check-array-axis 'array-axis-reduce arr k)])
