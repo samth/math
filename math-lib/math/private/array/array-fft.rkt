@@ -35,7 +35,7 @@
      (define new-xs (make-flvector n))
      (define new-ys (make-flvector n))
      (for-each-array+data-index
-      (unsafe-vector-remove ds k)
+      (safe-vector-remove ds k)
       (λ (js j)
         (define old-j (unsafe-fx* j dk))
         (flvector-fft! xs ys old-j (unsafe-fx+ old-j dk) new-xs new-ys old-j)))

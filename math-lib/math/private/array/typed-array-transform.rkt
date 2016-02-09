@@ -100,7 +100,7 @@
         [(not (index? dk))
          (raise-argument-error 'array-axis-insert "Index" 2 arr k dk)]
         [else
-         (define new-ds (unsafe-vector-insert ds k dk))
+         (define new-ds (safe-vector-insert ds k dk))
          (define proc (unsafe-array-proc arr))
          (array-default-strict
           ;;<changed>
