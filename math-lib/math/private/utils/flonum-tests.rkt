@@ -238,6 +238,21 @@
    (for/list: : (Listof Unary-Flonum-Failure) ([x  (in-list xs)]
                                                [i  (in-naturals 1)])
      (maybe-print-progress name i m)
+     (define e (list name x))
+     (define e* (cons name (list (bf x))))
+     (define er (f x))
+     (define e*r (parameterize ([bf-precision 256]) (g (bf x))))
+     (define e*s (~s e*))
+     (when ((flulp-error er (bigfloat->real* e*r)) . >= . 1.0)
+       (printf "\n~a => ~a\n~a => ~a\n~a => ~a\n   error is ~s ~s ulps\n"
+               (~s e #:min-width (string-length e*s))
+               (~r er #:precision 30 #:notation 'exponential)
+               e*s
+               (~r (bigfloat->real* e*r) #:precision 30 #:notation 'exponential)
+               e*s
+               (~r (bigfloat->flonum e*r) #:precision 30 #:notation 'exponential)
+               (flulp-error er (bigfloat->real* e*r))
+               (flulp-error er (bigfloat->flonum e*r))))
      (list (list name x) (unary-flonum-fun-error f g x)))
    (current-max-ulp-error)))
 
