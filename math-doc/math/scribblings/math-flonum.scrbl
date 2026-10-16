@@ -61,6 +61,10 @@ to flonum input.
 In Typed Racket, these are 2-3 times faster as well.
 }
 
+The @racket[flfma] procedure is re-exported from
+@racketmodname[racket/flonum]. It computes @racket[(+ (* a b) c)] with a
+single rounding, using the runtime's fused multiply-add implementation.
+
 @defproc[(flhypot [x Flonum] [y Flonum]) Flonum]{
 Computes @racket[(flsqrt (+ (* x x) (* y y)))] in way that overflows only when the
 answer is too large.

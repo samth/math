@@ -12,8 +12,7 @@
 (provide flsqrt1pm1
          flsinh flcosh fltanh
          flasinh flacosh flatanh
-         make-flexpt flexpt+ flexpt1p
-         flfma)
+         make-flexpt flexpt+ flexpt1p)
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; sqrt(1+x)-1
@@ -188,28 +187,5 @@
            (fl/ (flexpt a-hi y)
                 (flexp (fl* y (fllog1p (- (/ a-lo a-hi))))))]
           [else  (flexpt (+ 1.0 x) y)]))
-  
-  )  ; begin-encourage-inline
-
-;; ---------------------------------------------------------------------------------------------------
-;; Fused multiply-add
-
-(: slow-flfma (-> Flonum Flonum Flonum Flonum))
-(define (slow-flfma a b c)
-  (define n (near-pow2 (max (flsqrt (abs a)) (flsqrt (abs b)))))
-  (define 1/n (/ 1.0 n))
-  (* n n (fast-flfma (* a 1/n) (* b 1/n) (* c 1/n 1/n))))
-
-(begin-encourage-inline
-  
-  (: fast-flfma (-> Flonum Flonum Flonum Flonum))
-  (define (fast-flfma a b c)
-    (let-values ([(d-hi d-lo)  (fast-flfma/error a b c)])
-      (+ d-hi d-lo)))
-
-  (: flfma (-> Flonum Flonum Flonum Flonum))
-  (define (flfma a b c)
-    (let ([d  (fast-flfma a b c)])
-      (if (flrational? d) d (slow-flfma a b c))))
   
   )  ; begin-encourage-inline

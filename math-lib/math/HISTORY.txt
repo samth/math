@@ -1,0 +1,2 @@
+1.3
+- Re-export racket/flonum's flfma, using the runtime fused multiply-add operation.

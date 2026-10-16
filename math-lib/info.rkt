@@ -2,8 +2,8 @@
 
 (define collection 'multi)
 
-(define deps '(["base" #:version "8.16.0.4"]
-               ["typed-racket-lib" #:version "1.14"]
+(define deps '(["base" #:version "9.3.0.11"]
+               ["typed-racket-lib" #:version "1.16"]
                ("math-i386-macosx" #:platform "i386-macosx")
                ("math-x86_64-macosx" #:platform "x86_64-macosx")
                ("math-ppc-macosx" #:platform "ppc-macosx")
@@ -20,7 +20,7 @@
 
 (define pkg-authors '(ntoronto))
 
-(define version "1.2")
+(define version "1.3")
 
 (define license
   '(Apache-2.0 OR MIT))
