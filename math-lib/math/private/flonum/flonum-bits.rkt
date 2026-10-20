@@ -92,10 +92,10 @@
 (begin-encourage-inline
   
   (: flnext (Flonum -> Flonum))
-  (define (flnext x) (flstep x 1))
+  (define (flnext x) (fl+ 0.0 (flnextafter x +inf.0)))
   
   (: flprev (Flonum -> Flonum))
-  (define (flprev x) (flstep x -1))
+  (define (flprev x) (fl+ 0.0 (flnextafter x -inf.0)))
   
   )  ; begin-encourage-inline
 

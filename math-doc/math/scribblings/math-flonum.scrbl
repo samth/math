@@ -97,8 +97,7 @@ of @racket[x], respectively.
                         (function (compose fltanh fl) #:label "fltanh x" #:color 3))
                        #:x-min -2 #:x-max 2 #:y-label #f #:legend-anchor 'bottom-right)]
 
-Maximum observed error is 2 @tech{ulps}, making these functions (currently) much more accurate than their
-@racketmodname[racket/math] counterparts. They also return sensible values on the largest possible domain.
+Accuracy depends on the platform mathematics library.
 }
 
 @deftogether[(@defproc[(flasinh [y Flonum]) Flonum]
@@ -107,7 +106,6 @@ Maximum observed error is 2 @tech{ulps}, making these functions (currently) much
 Return the @hyperlink["http://en.wikipedia.org/wiki/Inverse_hyperbolic_function"]{inverse hyperbolic sine, cosine and tangent}
 of @racket[y], respectively.
 
-These functions are as robust and accurate as their corresponding inverses.
 }
 
 @deftogether[(@defproc[(flfactorial [n Flonum]) Flonum]
@@ -141,7 +139,7 @@ For log-factorial-like functions that return sensible values for non-integers, s
 @deftogether[(@defproc[(fllog1p [x Flonum]) Flonum]
               @defproc[(flexpm1 [x Flonum]) Flonum])]{
 Like @racket[(fllog (+ 1.0 x))] and @racket[(- (flexp x) 1.0)], but accurate when
-@racket[x] is small (within 1 @tech{ulp}).
+@racket[x] is small. Accuracy depends on the platform mathematics library.
 
 For example, one difficult input for @racket[(fllog (+ 1.0 x))] and @racket[(- (flexp x) 1.0)]
 is @racket[x] = @racket[1e-14], which @racket[fllog1p] and @racket[flexpm1] compute correctly:
@@ -190,7 +188,7 @@ Like @racket[(flexpt (+ x1 x2) y)], but more accurate.
 }
 
 @defproc[(flexp2 [x Flonum]) Nonnegative-Flonum]{
-Equivalent to @racket[(flexpt 2.0 x)], but faster when @racket[x] is an integer.
+Equivalent to @racket[(flexpt 2.0 x)].
 }
 
 @defproc[(fllog2 [x Flonum]) Flonum]{
@@ -200,8 +198,7 @@ In particular, @racket[(fllog2 x)] is correct for any power of two @racket[x].
                  (fllog2 4.5)
                  (/ (fllog (flexp2 -1066.0)) (fllog 2.0))
                  (fllog2 (flexp2 -1066.0))]
-Maximum observed error is 0.5006 @tech{ulps}, but is almost always no more than 0.5 (i.e. it is
-almost always @italic{correct}).
+Accuracy depends on the platform mathematics library.
 }
 
 @defproc[(fllogb [b Flonum] [x Flonum]) Flonum]{

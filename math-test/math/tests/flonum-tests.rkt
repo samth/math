@@ -209,3 +209,15 @@ fl2<=
 (check-equal? (flbracketed-root values -1e-200 1e-199) 0.)
 (check-equal? (flbracketed-root (λ (x) (- -1e-250 x)) 9e-202 -1e-200) -1e-250)
 (check-equal? (flbracketed-root (λ (x) (- +1e-250 x)) 9e-202 -1e-200) +1e-250)
+
+(for ([x (list -inf.0 -1.0 -1e-323 -5e-324 -0.0 0.0 5e-324 1e-323 1.0 +inf.0 +nan.0)])
+  (check-eqv? (flnext x) (flstep x 1))
+  (check-eqv? (flprev x) (flstep x -1))
+  (check-eqv? (flnext* x) (flnext x))
+  (check-eqv? (flprev* x) (flprev x)))
+
+(check-equal? (flfma 1.0000000000000002 0.9999999999999998 -1.0) -4.930380657631324e-32)
+(check-equal? (flfma 1e308 2.0 -1e308) 1e308)
+(check-equal? (flfma 5e-324 0.5 5e-324) 1e-323)
+(check-eqv? (flfma -0.0 1.0 -0.0) -0.0)
+(check-equal? (flfma +inf.0 0.0 1.0) +nan.0)

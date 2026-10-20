@@ -1,0 +1,3 @@
+1.3
+- Re-export core C99 flonum operations in place of local implementations.
+- Implement flnext/flprev and flnext*/flprev* with flnextafter.

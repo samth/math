@@ -65,22 +65,10 @@
 )  ; begin-encourage-inline
 
 (: flnext* (Flonum -> Flonum))
-(define (flnext* x)
-  (cond [(x . fl< . 0.0)  (fl- 0.0 (flprev* (fl- 0.0 x)))]
-        [(fl= x 0.0)  +min.0]
-        [(fl= x +inf.0)  +inf.0]
-        [else  (define next-x (fl+ x (fl* x (fl* 0.5 epsilon.0))))
-               (cond [(fl= next-x x)  (fl+ x (fl* x epsilon.0))]
-                     [else  next-x])]))
+(define (flnext* x) (flnext x))
 
 (: flprev* (Flonum -> Flonum))
-(define (flprev* x)
-  (cond [(x . fl< . 0.0)  (fl- 0.0 (flnext* (fl- 0.0 x)))]
-        [(fl= x 0.0)  -min.0]
-        [(fl= x +inf.0)  +max.0]
-        [else  (define prev-x (fl- x (fl* x (fl* 0.5 epsilon.0))))
-               (cond [(fl= prev-x x)  (fl- x (fl* x epsilon.0))]
-                     [else  prev-x])]))
+(define (flprev* x) (flprev x))
 
 ;; ===================================================================================================
 ;; Error measurement
